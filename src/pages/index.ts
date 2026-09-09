@@ -1,0 +1,10 @@
+export { Home } from "./Home";
+export { Login } from "./Login";
+export { Register } from "./Register";
+export { PsychicDetail } from "./PsychicDetail";
+export { Bookings } from "./Bookings";
+export { BookingDetail } from "./BookingDetail";
+export { ConsultationPage } from "./Consultation";
+export { ReviewPage } from "./Review";
+export { Profile } from "./Profile";
+export { NotFound } from "./NotFound";

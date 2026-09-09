@@ -1,0 +1,829 @@
+:root {
+  --layout-header-height: 72px;
+  --layout-footer-height: 60px;
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  height: var(--layout-header-height);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-card);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.header__logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.header__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header__nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  transition: all 0.2s ease;
+}
+
+.header__nav-link[data-active="true"],
+.header__nav-link:hover {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+}
+
+.header__user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header__username {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.header__logout {
+  background: none;
+  border: none;
+  color: var(--color-neutral);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.header__logout:hover {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+}
+
+.header__cta {
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.main {
+  flex: 1;
+  padding: 32px 0;
+}
+
+.footer {
+  height: var(--layout-footer-height);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-card);
+}
+
+.footer p {
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-neutral);
+}
+
+.page {
+  width: 100%;
+}
+
+.page__section {
+  margin-top: 40px;
+}
+
+.page__section h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.auth-layout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.auth-layout__card {
+  width: 100%;
+  max-width: 440px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-form h2 {
+  font-size: 28px;
+  text-align: center;
+}
+
+.auth-form__subtitle {
+  text-align: center;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.auth-form__error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.auth-form__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auth-form__footer {
+  text-align: center;
+  font-size: 14px;
+}
+
+.auth-form__link {
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+.auth-form__link:hover {
+  text-decoration: underline;
+}
+
+.hero {
+  background: linear-gradient(135deg, var(--color-accent-bg) 0%, var(--color-accent-bg) 100%);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-lg);
+  margin-top: 16px;
+}
+
+.hero__content {
+  text-align: center;
+  padding: 56px 24px;
+}
+
+.hero h1 {
+  font-size: 42px;
+  margin-bottom: 16px;
+}
+
+.hero__subtitle {
+  font-size: 18px;
+  max-width: 640px;
+  margin: 0 auto 24px;
+}
+
+.hero__badges {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.psychic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.psychic-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-card-border);
+  background: var(--color-card);
+  overflow: hidden;
+  transition: all 0.2s ease;
+  height: 100%;
+}
+
+.psychic-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+  border-color: var(--color-accent-border);
+}
+
+.psychic-card__image {
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.psychic-card__body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.psychic-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.psychic-card__name {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.psychic-card__specialties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.psychic-card__bio {
+  font-size: 14px;
+  color: var(--color-text);
+  margin: 12px 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.psychic-card__stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.psychic-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.psychic-card__reviews {
+  font-size: 13px;
+  color: var(--color-neutral);
+}
+
+.psychic-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.psychic-card__rate-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.psychic-card__rate-label {
+  font-size: 13px;
+  color: var(--color-neutral);
+}
+
+.psychic-detail__grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+  margin-top: 20px;
+}
+
+.psychic-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.psychic-detail__info h1 {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.psychic-detail__rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.psychic-detail__rate-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.psychic-detail__specialties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.psychic-detail__bio {
+  font-size: 16px;
+  line-height: 1.7;
+  margin: 16px 0;
+}
+
+.psychic-detail__tabs {
+  margin-top: 32px;
+}
+
+.tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 20px;
+}
+
+.tab {
+  background: none;
+  border: none;
+  padding: 12px 4px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.tab--active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+.tab-content {
+  /* Tab content area */
+}
+
+.psychic-bio ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.psychic-bio li {
+  padding-left: 20px;
+  position: relative;
+}
+
+.psychic-bio li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--color-accent);
+}
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.booking-form h3 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.booking-form__rate {
+  font-size: 15px;
+  color: var(--color-neutral);
+}
+
+.booking-form__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.booking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.booking-list__filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.booking-list__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.booking-list h3 {
+  font-size: 20px;
+  margin: 16px 0 12px;
+}
+
+.booking-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.booking-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.booking-card__participants {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.booking-card__participant {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.booking-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.booking-detail__participants {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.booking-detail__participant {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.booking-detail__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.booking-detail__info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+
+.booking-detail__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.consultation-session {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 24px;
+}
+
+.consultation-session--ready {
+  text-align: center;
+}
+
+.consultation-session__timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.consultation-session__time {
+  font-size: 48px;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--color-text-h);
+}
+
+.consultation-session__status {
+  font-size: 14px;
+  color: var(--color-success);
+}
+
+.consultation-session__actions {
+  margin-top: 8px;
+}
+
+.consultation-confirm {
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+}
+
+.consultation-confirm__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.consultation-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.consultation-summary__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.consultation-summary__stat {
+  text-align: center;
+  padding: 16px;
+  background: var(--color-neutral-bg);
+  border-radius: var(--radius-sm);
+}
+
+.consultation-summary__stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-h);
+}
+
+.consultation-summary__stat-label {
+  font-size: 13px;
+  color: var(--color-neutral);
+  margin-top: 4px;
+}
+
+.cost-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+.cost-log-table th,
+.cost-log-table td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.cost-log-table th {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.consultation-summary__review-btn {
+  width: fit-content;
+  margin-top: 16px;
+}
+
+.review-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.review-form h3 {
+  font-size: 24px;
+  margin: 0;
+}
+
+.review-form__subtitle {
+  color: var(--color-text);
+}
+
+.review-form__rating {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.review-form__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.review-list {
+  margin-top: 8px;
+}
+
+.review-list__header {
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+
+.review-list--empty {
+  text-align: center;
+  padding: 32px;
+  color: var(--color-neutral);
+}
+
+.review-item {
+  display: flex;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.review-item:last-child {
+  border-bottom: none;
+}
+
+.review-item__body {
+  flex: 1;
+}
+
+.review-item__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.review-item__author {
+  font-weight: 600;
+}
+
+.review-item__rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.review-item__date {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--color-neutral);
+}
+
+.review-item__comment {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.profile {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.profile__avatar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.profile__info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.profile__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.profile__edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.profile__form-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.profile__success {
+  color: var(--color-success);
+  font-size: 14px;
+}
+
+.not-found__title {
+  font-size: 72px;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin: 0;
+}
+
+.not-found__subtitle {
+  font-size: 28px;
+  margin: 16px 0;
+}
+
+.state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.state-container--tall {
+  min-height: 60vh;
+}
+
+@media (max-width: 768px) {
+  .header__nav {
+    display: none;
+  }
+
+  .header__container {
+    justify-content: space-between;
+  }
+
+  .psychic-detail__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .psychic-card {
+    max-width: 320px;
+  }
+
+  .booking-detail__info {
+    grid-template-columns: 1fr;
+  }
+
+  .consultation-summary__stats {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-form__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile__info {
+    grid-template-columns: 1fr;
+  }
+}
