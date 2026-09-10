@@ -1,11 +1,6 @@
 import { apiClient } from "./client";
 import { getUserFromToken } from "./token";
-import type { User, LoginRequest, RegisterRequest } from "../types";
-
-export interface AuthResponse {
-  user: User;
-  token: string;
-}
+import type { User, LoginRequest, RegisterRequest, AuthResponse } from "../types";
 
 export const authApi = {
   login: (payload: LoginRequest) =>
@@ -23,14 +18,16 @@ export const getCurrentUserProfile = (token: string | null): User | null => {
 
 export const decodeUserProfile = (token: string | null): User | null => {
   const payload = getUserFromToken(token);
-  console.log({payload});
   
   if (!payload) return null;
   return {
     id: payload.userId,
     email: payload.email,
     name: payload.email.split("@")[0],
-    role: payload.role,
+    role: payload.role || "customer",
+    roleId: payload.roleId,
+    profileImage: undefined,
+    profile_image: null,
     createdAt: "",
   };
 };

@@ -23,14 +23,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (payload: LoginRequest) => {
-    const { user: loggedInUser, token: jwt } = await authApi.login(payload);
-    console.log({loggedInUser});
+    const response = await authApi.login(payload);
+    const { user: loggedInUser, token: jwt } = response.data;
     
     setAuth(jwt, loggedInUser);
   };
 
   const register = async (payload: RegisterRequest) => {
-    const { user: newUser, token: jwt } = await authApi.register(payload);
+    const response = await authApi.register(payload);
+    const { user: newUser, token: jwt } = response.data;
     setAuth(jwt, newUser);
   };
 

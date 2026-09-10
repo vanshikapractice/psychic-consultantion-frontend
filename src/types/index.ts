@@ -1,11 +1,13 @@
-export type Role = "customer" | "psychic";
+export type Role = "customer" | "psychic" | "admin";
 
 export interface User {
-  id: string;
+  id: string | number;
   name: string;
   email: string;
   role: Role;
+  roleId?: number;
   profileImage?: string;
+  profile_image?: string | null;
   createdAt: string;
 }
 
@@ -67,8 +69,12 @@ export interface Review {
 }
 
 export interface AuthResponse {
-  user: User;
-  token: string;
+  success: boolean;
+  message: string;
+  data: {
+    token: string;
+    user: User;
+  };
 }
 
 export interface LoginRequest {

@@ -1,9 +1,10 @@
 import type { Role } from "../types";
 
 export interface TokenPayload {
-  userId: string;
+  userId: string | number;
   email: string;
-  role: Role;
+  role?: Role;
+  roleId?: number;
   exp: number;
 }
 
@@ -33,8 +34,6 @@ export const isTokenValid = (token: string): boolean => {
 };
 
 export const getUserFromToken = (token: string | null): TokenPayload | null => {
-  console.log({token});
-  
   if (!token) return null;
   try {
     const payload = decodeToken(token);
