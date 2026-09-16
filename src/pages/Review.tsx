@@ -1,34 +1,23 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button, Card, Spinner } from "../components/ui";
 import { ReviewForm } from "../components/reviews";
-import { consultationsApi } from "../api";
-import type { Consultation } from "../types";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { selectActiveConsultation, selectConsultationLoading, selectConsultationError } from "../store";
 
 export function ReviewPage() {
   const { consultationId } = useParams<{ consultationId: string }>();
   const navigate = useNavigate();
-
-  const [consultation, setConsultation] = useState<Consultation | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const consultation = useAppSelector(selectActiveConsultation);
+  const loading = useAppSelector(selectConsultationLoading);
+  const error = useAppSelector(selectConsultationError);
 
   useEffect(() => {
-    const fetch = async () => {
-      if (!consultationId) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await consultationsApi.get(consultationId);
-        setConsultation(data);
-      } catch (err) {
-        setError((err as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetch();
-  }, [consultationId]);
+    if (consultationId) {
+      dispatch({ type: "consultations/fetch", payload: consultationId });
+    }
+  }, [dispatch, consultationId]);
 
   if (loading) {
     return (

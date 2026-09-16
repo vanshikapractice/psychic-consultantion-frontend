@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { Button, ProgressBar } from "../ui";
-import { formatCurrency, formatTimer } from "../../utils/dateFormat";
+import { formatCurrency } from "../../utils/dateFormat";
 import type { Consultation } from "../../types";
 
 interface ConsultationSessionProps {
   consultation: Consultation;
   elapsed: number;
+  formattedDuration: string;
   isRunning: boolean;
-  onEnd: () => Promise<void>;
+  onEnd: () => void;
 }
 
 export function ConsultationSession({
   consultation,
   elapsed,
+  formattedDuration,
   isRunning,
   onEnd,
 }: ConsultationSessionProps) {
@@ -23,12 +25,12 @@ export function ConsultationSession({
   const rate = consultation.rate ?? 0;
   const sessionCost = (elapsed / 60) * rate;
 
-  const handleEnd = async () => {
+  const handleEnd = () => {
     setShowEndConfirm(false);
     setError(null);
     setEnding(true);
     try {
-      await onEnd();
+      onEnd();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -41,7 +43,7 @@ export function ConsultationSession({
       {error && <p role="alert">{error}</p>}
 
       <div className="consultation-session__timer">
-        <span className="consultation-session__time">{formatTimer(elapsed)}</span>
+        <span className="consultation-session__time">{formattedDuration}</span>
         <span className="consultation-session__status">
           {isRunning ? "Recording…" : "Paused"}
         </span>

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Textarea, Rating } from "../ui";
-import { useCreateReview } from "../../hooks/useReviews";
+import { useAppDispatch } from "../../store/hooks";
 import type { Consultation } from "../../types";
 
 interface ReviewFormProps {
@@ -13,10 +13,10 @@ export function ReviewForm({ consultation }: ReviewFormProps) {
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { create } = useCreateReview();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (rating < 1) {
       setError("Please select a star rating.");
@@ -29,18 +29,11 @@ export function ReviewForm({ consultation }: ReviewFormProps) {
 
     setSubmitting(true);
     setError(null);
-    try {
-      await create({
-        consultationId: consultation.id,
-        rating,
-        comment,
-      });
-      navigate(`/psychic/${consultation.psychicId}`);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setSubmitting(false);
-    }
+    dispatch({
+      type: "reviews/create",
+      payload: { consultationId: consultation.id, rating, comment },
+    });
+    navigate(`/psychic/${consultation.psychicId}`);
   };
 
   return (

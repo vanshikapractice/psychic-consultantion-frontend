@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { useAppSelector } from "../store/hooks";
+import { selectAuthUser, selectAuthLoading } from "../store";
 import { Spinner } from "../components/ui";
 import type { ReactNode } from "react";
 
@@ -8,7 +9,8 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const user = useAppSelector(selectAuthUser);
+  const loading = useAppSelector(selectAuthLoading);
   const location = useLocation();
 
   if (loading) {
@@ -28,7 +30,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 }
 
 export function PublicRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const user = useAppSelector(selectAuthUser);
+  const loading = useAppSelector(selectAuthLoading);
 
   if (loading) {
     return (

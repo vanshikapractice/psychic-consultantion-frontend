@@ -1,7 +1,20 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import { Badge, Button, Card, Spinner } from "../ui";
-import { useBookings } from "../../hooks/useBookings";
+import {
+  useAppDispatch,
+  useAppSelector,
+} from "../../store/hooks";
+import {
+  selectBookingLoading,
+  selectBookingError,
+  selectUpcomingBookings,
+  selectPastBookings,
+  setBookingFilter,
+  cancelBooking,
+  type BookingsFilter,
+} from "../../store";
 import type { Booking, BookingStatus } from "../../types";
 import { formatDateTime } from "../../utils/dateFormat";
 
@@ -20,37 +33,23 @@ const STATUS_VARIANT: Record<BookingStatus, "warning" | "success" | "error" | "n
 };
 
 export function BookingList() {
-  const [filter, setFilter] = useState<"customer" | "psychic" | "all">("all");
-  const { data: bookings, loading, error, refetch, updateStatus } = useBookings(filter);
+  const dispatch = useAppDispatch();
+  const loading = useAppSelector(selectBookingLoading);
+  const error = useAppSelector(selectBookingError);
+  const filter = useAppSelector((state) => state.bookings.filter) as BookingsFilter;
+  const upcoming = useAppSelector(selectUpcomingBookings);
+  const past = useAppSelector(selectPastBookings);
 
-  const now = useMemo(
-    () => {
-      // eslint-disable-next-line react-hooks/purity
-      return Date.now();
-    },
-    []
-  );
-  const upcoming = useMemo(
-    () =>
-      bookings.filter(
-        (b) => new Date(b.dateTime).getTime() > now && b.status !== "canceled"
-      ),
-    [bookings, now]
-  );
-  const past = useMemo(
-    () =>
-      bookings.filter(
-        (b) => new Date(b.dateTime).getTime() <= now || b.status === "completed"
-      ),
-    [bookings, now]
-  );
+  useEffect(() => {
+    dispatch({ type: "bookings/fetch", payload: filter });
+  }, [dispatch, filter]);
 
-  const handleCancel = async (id: string) => {
-    try {
-      await updateStatus(id, "canceled");
-    } catch (err) {
-      console.error(err);
-    }
+  const handleFilterChange = (next: BookingsFilter) => {
+    dispatch(setBookingFilter(next));
+  };
+
+  const handleCancel = (id: string) => {
+    dispatch(cancelBooking(id));
   };
 
   if (loading) {
@@ -65,8 +64,8 @@ export function BookingList() {
   if (error) {
     return (
       <div className="state-container">
-        <p role="alert">{error.message}</p>
-        <Button variant="secondary" onClick={refetch}>
+        <p role="alert">{error}</p>
+        <Button variant="secondary" onClick={() => dispatch({ type: "bookings/fetch", payload: filter })}>
           Retry
         </Button>
       </div>
@@ -79,21 +78,21 @@ export function BookingList() {
         <Button
           variant={filter === "all" ? "primary" : "outline"}
           size="sm"
-          onClick={() => setFilter("all")}
+          onClick={() => handleFilterChange("all")}
         >
           All
         </Button>
         <Button
           variant={filter === "customer" ? "primary" : "outline"}
           size="sm"
-          onClick={() => setFilter("customer")}
+          onClick={() => handleFilterChange("customer")}
         >
           As Customer
         </Button>
         <Button
           variant={filter === "psychic" ? "primary" : "outline"}
           size="sm"
-          onClick={() => setFilter("psychic")}
+          onClick={() => handleFilterChange("psychic")}
         >
           As Psychic
         </Button>
@@ -150,7 +149,6 @@ function BookingCard({ booking, onCancel }: BookingCardProps) {
   const isUpcoming = useMemo(
     () =>
       new Date(booking.dateTime).getTime() >
-      // eslint-disable-next-line react-hooks/purity
       Date.now() &&
       booking.status !== "canceled",
     [booking.dateTime, booking.status]

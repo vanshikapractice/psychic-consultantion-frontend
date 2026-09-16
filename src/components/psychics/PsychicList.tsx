@@ -1,26 +1,40 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { PsychicCard } from "./PsychicCard";
 import { PsychicFilter } from "./PsychicFilter";
 import { Button, Spinner } from "../ui";
-import { usePsychics } from "../../hooks/usePsychics";
-import type { Psychic, PsychicsFilter } from "../../types";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
+import {
+  selectFilteredPsychics,
+  selectPsychicLoading,
+  selectPsychicError,
+  setPsychicFilter,
+  resetFilter,
+  type PsychicsFilter,
+} from "../../store";
+import type { Psychic } from "../../types";
 
 export function PsychicList() {
-  const [filter, setFilter] = useState<PsychicsFilter>({ search: "" });
-
-  const { data: psychics, loading, error, refetch } = usePsychics(filter);
+  const dispatch = useAppDispatch();
+  const psychics = useAppSelector(selectFilteredPsychics);
+  const loading = useAppSelector(selectPsychicLoading);
+  const error = useAppSelector(selectPsychicError);
+  const currentFilter = useAppSelector((state) => state.psychics.filter) as PsychicsFilter;
 
   const handleSearchChange = (value: string) => {
-    setFilter((prev) => ({ ...prev, search: value }));
+    dispatch(setPsychicFilter({ search: value }));
   };
 
   const handleFilterChange = (next: Partial<PsychicsFilter>) => {
-    setFilter((prev) => ({ ...prev, ...next }));
+    dispatch(setPsychicFilter(next));
   };
 
   const handleReset = () => {
-    setFilter({ search: "" });
+    dispatch(resetFilter());
   };
+
+  useEffect(() => {
+    dispatch({ type: "psychics/fetch" });
+  }, [dispatch, currentFilter.specialty, currentFilter.minRating, currentFilter.maxRate]);
 
   return (
     <div className="psychic-list">
@@ -28,14 +42,14 @@ export function PsychicList() {
         <input
           type="search"
           placeholder="Search psychics..."
-          value={filter.search ?? ""}
+          value={currentFilter.search ?? ""}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="search-bar__input"
         />
       </div>
 
       <PsychicFilter
-        active={filter}
+        active={currentFilter}
         onChange={handleFilterChange}
         onReset={handleReset}
       />
@@ -43,8 +57,8 @@ export function PsychicList() {
       {error && (
         <div className="state-container">
           <Spinner />
-          <p role="alert">{error.message}</p>
-          <Button variant="secondary" onClick={refetch}>
+          <p role="alert">{error}</p>
+          <Button variant="secondary" onClick={() => dispatch({ type: "psychics/fetch" })}>
             Retry
           </Button>
         </div>

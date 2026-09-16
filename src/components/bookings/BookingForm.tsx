@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Input, Select } from "../ui";
-import { useBookings } from "../../hooks/useBookings";
+import { useAppDispatch } from "../../store/hooks";
 import type { Psychic } from "../../types";
 
 interface BookingFormProps {
@@ -16,10 +16,10 @@ export function BookingForm({ psychic }: BookingFormProps) {
   const [duration, setDuration] = useState("30");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { create } = useBookings();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -36,18 +36,11 @@ export function BookingForm({ psychic }: BookingFormProps) {
     }
 
     setSubmitting(true);
-    try {
-      const booking = await create({
-        psychicId: psychic.id,
-        dateTime,
-        duration: Number(duration),
-      });
-      navigate(`/booking/${booking.id}`);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setSubmitting(false);
-    }
+    dispatch({
+      type: "bookings/create",
+      payload: { psychicId: psychic.id, dateTime, duration: Number(duration) },
+    });
+    navigate("/bookings");
   };
 
   const estimatedCost = (Number(duration) * psychic.rate).toFixed(2);

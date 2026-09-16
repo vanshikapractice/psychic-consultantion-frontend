@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../../hooks/useAuth";
+import { useAppDispatch } from "../../store/hooks";
+import { selectAuthError } from "../../store/selectors/authSelectors";
+import { useAppSelector } from "../../store/hooks";
 import { Button, Input, Select } from "../ui";
 import type { RegisterRequest, Role } from "../../types";
 
@@ -14,9 +16,9 @@ export function RegisterForm() {
     Partial<Record<keyof RegisterRequest, string>>
   >({});
   const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const { register } = useAuth();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const authError = useAppSelector(selectAuthError);
 
   const handleChange = (field: string, value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -36,20 +38,16 @@ export function RegisterForm() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     setSubmitting(true);
-    setSubmitError(null);
-    try {
-      await register(values);
-      navigate("/");
-    } catch (err) {
-      setSubmitError((err as Error).message);
-    } finally {
-      setSubmitting(false);
-    }
+    dispatch({
+      type: "auth/register",
+      payload: values,
+    });
+    navigate("/");
   };
 
   return (
@@ -59,9 +57,9 @@ export function RegisterForm() {
         Join thousands of seekers and advisors
       </p>
 
-      {submitError && (
+      {authError && (
         <div className="auth-form__error" role="alert">
-          {submitError}
+          {authError}
         </div>
       )}
 
@@ -114,7 +112,7 @@ export function RegisterForm() {
 
       <p className="auth-form__footer">
         Already have an account?{" "}
-        <Link to="/login" className="auth-form__link">
+        <Link to="/register" className="auth-form__link">
           Sign in
         </Link>
       </p>

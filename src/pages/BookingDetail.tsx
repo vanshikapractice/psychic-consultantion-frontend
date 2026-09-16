@@ -1,22 +1,27 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Badge, Button, Card, Spinner } from "../components/ui";
-import { useAuth } from "../hooks/useAuth";
-import { useBooking } from "../hooks/useBookings";
-import { bookingsApi, consultationsApi } from "../api";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import {
+  selectBookingById,
+  selectBookingLoading,
+  selectBookingError,
+  selectBookingFilter,
+  updateBookingStatus,
+} from "../store";
+import { selectAuthUser } from "../store/selectors/authSelectors";
+import { consultationsApi } from "../api";
 import { formatDateTime } from "../utils/dateFormat";
 
 export function BookingDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const {
-    data: booking,
-    loading,
-    error,
-    refresh,
-  } = useBooking(id ?? "");
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectAuthUser);
+  const booking = useAppSelector((state) => selectBookingById(id ?? "")(state));
+  const loading = useAppSelector(selectBookingLoading);
+  const error = useAppSelector(selectBookingError);
+  const currentFilter = useAppSelector(selectBookingFilter);
 
   const [starting, setStarting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -27,8 +32,8 @@ export function BookingDetail() {
     setActionError(null);
     try {
       const consultation = await consultationsApi.start(booking.id);
-      await bookingsApi.updateStatus(booking.id, "confirmed");
-      await refresh();
+      dispatch(updateBookingStatus({ id: booking.id, status: "confirmed" }));
+      dispatch({ type: "bookings/fetch", payload: currentFilter });
       navigate(`/consultation/${consultation.id}`);
     } catch (err) {
       setActionError((err as Error).message);
@@ -37,14 +42,10 @@ export function BookingDetail() {
     }
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = () => {
     if (!booking) return;
-    try {
-      await bookingsApi.updateStatus(booking.id, "confirmed");
-      await refresh();
-    } catch (err) {
-      setActionError((err as Error).message);
-    }
+    dispatch(updateBookingStatus({ id: booking.id, status: "confirmed" }));
+    dispatch({ type: "bookings/fetch", payload: currentFilter });
   };
 
   if (loading) {
@@ -59,7 +60,7 @@ export function BookingDetail() {
   if (error || !booking) {
     return (
       <div className="state-container">
-        <p role="alert">{error?.message ?? "Booking not found."}</p>
+        <p role="alert">{error ?? "Booking not found."}</p>
         <Link to="/bookings">
           <Button variant="secondary">Back to Bookings</Button>
         </Link>

@@ -1,18 +1,35 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Avatar, Badge, Button, Card, Rating, Spinner } from "../components/ui";
 import { BookingForm } from "../components/bookings";
 import { ReviewList } from "../components/reviews";
-import { usePsychic } from "../hooks/usePsychics";
-import { useReviews } from "../hooks/useReviews";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import {
+  selectSelectedPsychic,
+  selectPsychicLoading,
+  selectPsychicError,
+} from "../store";
+import { selectReviewLoading, selectReviews } from "../store/selectors/reviewSelectors";
 import { formatCurrency } from "../utils/dateFormat";
+import type { Psychic } from "../types";
 
 export function PsychicDetail() {
   const { id } = useParams<{ id: string }>();
-  const { data: psychic, loading, error, refetch } = usePsychic(id ?? "");
-  const { data: reviews, loading: reviewsLoading } = useReviews(id ?? "");
+  const dispatch = useAppDispatch();
+  const psychic = useAppSelector(selectSelectedPsychic) as Psychic | null;
+  const loading = useAppSelector(selectPsychicLoading);
+  const error = useAppSelector(selectPsychicError);
+  const reviews = useAppSelector(selectReviews);
+  const reviewsLoading = useAppSelector(selectReviewLoading);
 
   const [activeTab, setActiveTab] = useState<"about" | "reviews">("about");
+
+  useEffect(() => {
+    if (id) {
+      dispatch({ type: "psychics/fetchOne", payload: id });
+      dispatch({ type: "reviews/fetch", payload: id });
+    }
+  }, [dispatch, id]);
 
   if (loading) {
     return (
@@ -26,8 +43,8 @@ export function PsychicDetail() {
   if (error || !psychic) {
     return (
       <div className="state-container">
-        <p role="alert">{error?.message ?? "Psychic not found."}</p>
-        <Button variant="secondary" onClick={refetch}>
+        <p role="alert">{error ?? "Psychic not found."}</p>
+        <Button variant="secondary" onClick={() => dispatch({ type: "psychics/fetchOne", payload: id ?? "" })}>
           Retry
         </Button>
       </div>

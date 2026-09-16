@@ -1,6 +1,7 @@
 import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { Avatar } from "../components/ui";
-import { useAuth } from "../hooks/useAuth";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { selectAuthUser, logout } from "../store";
 
 const navItems = [
   { to: "/", label: "Find a Psychic", icon: "🔮" },
@@ -9,7 +10,8 @@ const navItems = [
 ];
 
 export function MainLayout() {
-  const { user, logout } = useAuth();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectAuthUser);
   const location = useLocation();
 
   return (
@@ -47,7 +49,7 @@ export function MainLayout() {
                 <button
                   type="button"
                   className="header__logout"
-                  onClick={logout}
+                  onClick={() => dispatch(logout())}
                 >
                   Logout
                 </button>

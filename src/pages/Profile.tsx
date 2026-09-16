@@ -1,32 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar, Badge, Button, Card, Input } from "../components/ui";
-import { useAuth } from "../hooks/useAuth";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { selectAuthUser, selectAuthLoading, selectAuthError } from "../store";
 
 export function Profile() {
-  const { user, logout, updateProfile } = useAuth();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectAuthUser);
+  const loading = useAppSelector(selectAuthLoading);
+  const error = useAppSelector(selectAuthError);
+
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(user?.name ?? "");
   const [profileImage, setProfileImage] = useState(user?.profileImage ?? "");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    setName(user?.name ?? "");
+    setProfileImage(user?.profileImage ?? "");
+  }, [user]);
 
   if (!user) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    setError(null);
     setSuccess(null);
-    try {
-      await updateProfile({ name, profileImage });
-      setSuccess("Profile updated.");
-      setEditing(false);
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setSaving(false);
-    }
+    dispatch({ type: "auth/updateProfile", payload: { name, profileImage } });
+    setSuccess("Profile updated.");
+    setEditing(false);
+  };
+
+  const handleLogout = () => {
+    dispatch({ type: "auth/logout" });
   };
 
   return (
@@ -67,7 +71,7 @@ export function Profile() {
             <Button variant="outline" onClick={() => setEditing(true)}>
               Edit Profile
             </Button>
-            <Button variant="danger" onClick={logout}>
+            <Button variant="danger" onClick={handleLogout}>
               Logout
             </Button>
           </div>
@@ -79,14 +83,14 @@ export function Profile() {
               label="Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              disabled={saving}
+              disabled={loading}
             />
             <Input
               label="Profile Image URL"
               placeholder="https://example.com/image.jpg"
               value={profileImage}
               onChange={(e) => setProfileImage(e.target.value)}
-              disabled={saving}
+              disabled={loading}
             />
             {error && <p role="alert">{error}</p>}
             {success && <p className="profile__success">{success}</p>}
@@ -94,10 +98,10 @@ export function Profile() {
               <Button
                 type="submit"
                 variant="primary"
-                loading={saving}
-                disabled={saving}
+                loading={loading}
+                disabled={loading}
               >
-                {saving ? "Saving…" : "Save Changes"}
+                {loading ? "Saving…" : "Save Changes"}
               </Button>
               <Button
                 type="button"

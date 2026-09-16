@@ -1,12 +1,32 @@
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Card, Spinner } from "../components/ui";
 import { ConsultationSession, ConsultationSummary } from "../components/consultations";
-import { useConsultation } from "../hooks/useConsultation";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import {
+  selectActiveConsultation,
+  selectConsultationLoading,
+  selectConsultationError,
+  selectIsRunning,
+  selectElapsed,
+  selectFormattedDuration,
+} from "../store";
 
 export function ConsultationPage() {
   const { id } = useParams<{ id: string }>();
-  const { consultation, loading, error, isRunning, elapsed, endConsultation } =
-    useConsultation(id ?? "");
+  const dispatch = useAppDispatch();
+  const consultation = useAppSelector(selectActiveConsultation);
+  const loading = useAppSelector(selectConsultationLoading);
+  const error = useAppSelector(selectConsultationError);
+  const isRunning = useAppSelector(selectIsRunning);
+  const elapsed = useAppSelector(selectElapsed);
+  const formattedDuration = useAppSelector(selectFormattedDuration);
+
+  useEffect(() => {
+    if (id) {
+      dispatch({ type: "consultations/fetch", payload: id });
+    }
+  }, [dispatch, id]);
 
   if (loading) {
     return (
@@ -20,7 +40,7 @@ export function ConsultationPage() {
   if (error) {
     return (
       <div className="state-container">
-        <p role="alert">{error.message}</p>
+        <p role="alert">{error}</p>
       </div>
     );
   }
@@ -50,9 +70,10 @@ export function ConsultationPage() {
         <ConsultationSession
           consultation={consultation}
           elapsed={elapsed}
+          formattedDuration={formattedDuration}
           isRunning={isRunning}
-          onEnd={async () => {
-            await endConsultation();
+          onEnd={() => {
+            dispatch({ type: "consultations/end", payload: { consultationId: consultation.id } });
           }}
         />
       </Card>
