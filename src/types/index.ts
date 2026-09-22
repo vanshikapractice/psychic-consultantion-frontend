@@ -1,5 +1,10 @@
 export type Role = "customer" | "psychic" | "admin";
 
+export interface RoleRecord {
+  id: number;
+  name: string;
+}
+
 export interface User {
   id: string | number;
   name: string;
@@ -20,6 +25,11 @@ export interface Psychic extends User {
   rating: number;
   reviewCount: number;
   yearsOfExperience: number;
+  userId?: string | number;
+  displayName?: string;
+  userName?: string;
+  userEmail?: string;
+  status?: string;
 }
 
 export type BookingStatus = "pending" | "confirmed" | "canceled" | "completed";
@@ -38,6 +48,7 @@ export interface Booking {
   totalPrice: number;
   status: BookingStatus;
   createdAt: string;
+  notes?: string;
 }
 
 export type ConsultationStatus = "active" | "completed" | "canceled";
@@ -48,6 +59,7 @@ export interface Consultation {
   psychicId: string;
   customerId: string;
   psychicName: string;
+  customerName?: string;
   startTime: string;
   endTime?: string;
   duration: number;
@@ -55,6 +67,9 @@ export interface Consultation {
   totalPrice: number;
   costLog: { at: string; duration: number; cost: number }[];
   status: ConsultationStatus;
+  transcript?: string;
+  notes?: string;
+  scheduledAt?: string;
 }
 
 export interface Review {
@@ -86,7 +101,7 @@ export interface RegisterRequest {
   name: string;
   email: string;
   password: string;
-  role: Role;
+  role_id: number;
 }
 
 export type Specialty =

@@ -8,8 +8,13 @@ export interface PsychicCardProps {
 }
 
 export function PsychicCard({ psychic }: PsychicCardProps) {
-  const primarySpecialty = psychic.specialties[0] ?? "General";
-  const otherSpecialties = psychic.specialties.slice(1);
+  const specialties = Array.isArray(psychic.specialties) ? psychic.specialties : [];
+  const primarySpecialty = specialties[0] ?? "General";
+  const otherSpecialties = specialties.slice(1);
+  const rating = Number(psychic.rating) || 0;
+  const rate = Number(psychic.rate) || 0;
+  const reviewCount = Number(psychic.reviewCount) || 0;
+  const yearsOfExperience = Number(psychic.yearsOfExperience) || 0;
 
   return (
     <Link to={`/psychic/${psychic.id}`} className="psychic-card">
@@ -44,19 +49,19 @@ export function PsychicCard({ psychic }: PsychicCardProps) {
 
         <div className="psychic-card__stats">
           <div className="psychic-card__rating">
-            <Rating value={psychic.rating} readOnly size="sm" showValue />
+            <Rating value={rating} readOnly size="sm" showValue />
           </div>
           <span className="psychic-card__reviews">
-            ({psychic.reviewCount} reviews)
+            ({reviewCount} reviews)
           </span>
         </div>
 
         <div className="psychic-card__footer">
           <div className="psychic-card__rate">
-            <span className="psychic-card__rate-value">${psychic.rate.toFixed(2)}</span>
+            <span className="psychic-card__rate-value">${rate.toFixed(2)}</span>
             <span className="psychic-card__rate-label">per min</span>
           </div>
-          <Badge variant="info">{psychic.yearsOfExperience} yrs exp</Badge>
+          <Badge variant="info">{yearsOfExperience} yrs exp</Badge>
         </div>
       </div>
 

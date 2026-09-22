@@ -1,4 +1,6 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { resetApp } from "../resetAction";
+import { initAuthState } from "../../api/auth";
 import type { User } from "../../types";
 
 interface AuthState {
@@ -9,8 +11,7 @@ interface AuthState {
 }
 
 const initialState: AuthState = {
-  user: null,
-  token: null,
+  ...initAuthState(),
   loading: false,
   error: null,
 };
@@ -41,6 +42,7 @@ export const authSlice = createSlice({
         state.user = { ...state.user, ...action.payload };
       }
     },
+    [resetApp.type]: () => initialState,
   },
 });
 

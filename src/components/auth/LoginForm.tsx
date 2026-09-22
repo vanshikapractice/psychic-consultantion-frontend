@@ -1,8 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { useAppDispatch } from "../../store/hooks";
-import { selectAuthError } from "../../store/selectors/authSelectors";
-import { useAppSelector } from "../../store/hooks";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import { Button, Input } from "../ui";
 import type { LoginRequest } from "../../types";
 
@@ -12,9 +10,8 @@ export function LoginForm() {
   const [values, setValues] = useState<LoginRequest>({ email: "", password: "" });
   const [errors, setErrors] = useState<Partial<Record<keyof LoginRequest, string>>>({});
   const [submitting, setSubmitting] = useState(false);
-  const dispatch = useAppDispatch();
+  const { login, error: authError } = useAuth();
   const navigate = useNavigate();
-  const authError = useAppSelector(selectAuthError);
 
   const handleChange = (field: keyof LoginRequest, value: string) => {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -30,13 +27,18 @@ export function LoginForm() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     setSubmitting(true);
-    dispatch({ type: "auth/login", payload: values });
-    navigate("/");
+    setErrors({});
+    try {
+      await login(values);
+      navigate("/");
+    } catch {
+      setSubmitting(false);
+    }
   };
 
   return (

@@ -3,6 +3,7 @@ import { useAppSelector } from "../store/hooks";
 import { selectAuthUser, selectAuthLoading } from "../store";
 import { Spinner } from "../components/ui";
 import type { ReactNode } from "react";
+import type { Role } from "../types";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -24,6 +25,39 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return <>{children}</>;
+}
+
+interface RoleProtectedRouteProps {
+  children: ReactNode;
+  allowedRoles: Role[];
+}
+
+export function RoleProtectedRoute({
+  children,
+  allowedRoles,
+}: RoleProtectedRouteProps) {
+  const user = useAppSelector(selectAuthUser);
+  const loading = useAppSelector(selectAuthLoading);
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="state-container">
+        <Spinner size="lg" />
+        <p>Loading…</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

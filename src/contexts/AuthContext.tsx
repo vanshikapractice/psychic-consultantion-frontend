@@ -1,41 +1,97 @@
-import { useState, type ReactNode } from "react";
-import { apiClient, authApi } from "../api";
-import { getCurrentUserProfile } from "../api/auth";
+import { useState, useEffect, type ReactNode } from "react";
+import { apiClient, authApi, normalizeUser } from "../api";
+import { initAuthState } from "../api/auth";
 import { AuthContext } from "./auth-context";
 import type { User, LoginRequest, RegisterRequest } from "../types";
+import {
+  setAuth as setReduxAuth,
+  setAuthError,
+  setAuthLoading,
+  updateUser,
+} from "../store/slices/authSlice";
+import { useAppDispatch } from "../store/hooks";
+import { resetApp } from "../store/resetAction";
+import { clearAppStorage, clearQueryCache } from "../utils/cleanup";
 
 export { AuthContext } from "./auth-context";
 
 function initUser(): User | null {
-  const storedToken = apiClient.token;
-  if (!storedToken) return null;
-  return getCurrentUserProfile(storedToken);
+  return initAuthState().user;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const dispatch = useAppDispatch();
   const [user, setUser] = useState<User | null>(initUser);
   const [token, setToken] = useState<string | null>(apiClient.token);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const restored = initAuthState();
+    if (restored.user && restored.token) {
+      dispatch(setReduxAuth(restored));
+    }
+  }, [dispatch]);
 
   const setAuth = (newToken: string | null, newUser: User | null) => {
     apiClient.setToken(newToken);
     setToken(newToken);
     setUser(newUser);
+    setLoading(false);
+    setError(null);
+    dispatch(setReduxAuth({ user: newUser, token: newToken }));
+    dispatch(setAuthLoading(false));
+    dispatch(setAuthError(null));
+  };
+
+  const failAuth = (authError: unknown) => {
+    const message = authError instanceof Error ? authError.message : "Unable to complete authentication.";
+    setLoading(false);
+    setError(message);
+    dispatch(setAuthLoading(false));
+    dispatch(setAuthError(message));
   };
 
   const login = async (payload: LoginRequest) => {
-    const response = await authApi.login(payload);
-    const { user: loggedInUser, token: jwt } = response.data;
-    
-    setAuth(jwt, loggedInUser);
+    setLoading(true);
+    setError(null);
+    dispatch(setAuthLoading(true));
+    dispatch(setAuthError(null));
+    try {
+      const response = await authApi.login(payload);
+      const { user: rawUser, token: jwt } = response.data;
+      const loggedInUser = normalizeUser(rawUser) ?? rawUser;
+      setAuth(jwt, loggedInUser);
+    } catch (authError) {
+      failAuth(authError);
+      throw authError;
+    }
   };
 
   const register = async (payload: RegisterRequest) => {
-    const response = await authApi.register(payload);
-    const { user: newUser, token: jwt } = response.data;
-    setAuth(jwt, newUser);
+    setLoading(true);
+    setError(null);
+    dispatch(setAuthLoading(true));
+    dispatch(setAuthError(null));
+    try {
+      const response = await authApi.register(payload);
+      const { user: rawUser, token: jwt } = response.data;
+      const newUser = normalizeUser(rawUser) ?? rawUser;
+      setAuth(jwt, newUser);
+    } catch (authError) {
+      failAuth(authError);
+      throw authError;
+    }
   };
 
   const logout = () => {
+    // 1. Clear React Query cache (messages, psychics, bookings, etc.)
+    clearQueryCache();
+    // 2. Reset every Redux slice to its initial state
+    dispatch(resetApp());
+    // 3. Clear all user-specific data from localStorage
+    clearAppStorage();
+    // 4. Clear the in-memory API token and update local React state
     setAuth(null, null);
   };
 
@@ -43,14 +99,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name?: string;
     profileImage?: string;
   }) => {
-    const updated = await authApi.updateProfile(payload);
-    setUser(updated);
+    dispatch(setAuthLoading(true));
+    dispatch(setAuthError(null));
+    try {
+      const updated = await authApi.updateProfile(payload);
+      setUser(updated);
+      dispatch(updateUser(updated));
+      dispatch(setAuthLoading(false));
+    } catch (error) {
+      dispatch(setAuthLoading(false));
+      dispatch(setAuthError((error as Error).message));
+      throw error;
+    }
   };
 
   const value = {
     user,
     token,
-    loading: false,
+    loading,
+    error,
     login,
     register,
     logout,

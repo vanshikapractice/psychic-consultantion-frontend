@@ -11,5 +11,5 @@ export const reviewsApi = {
   create: (payload: CreateReviewPayload) =>
     apiClient.post<Review>("/api/reviews", payload),
   getByPsychic: (id: string) =>
-    apiClient.get<Review[]>(`/api/psychics/${id}/reviews`),
+    apiClient.get<Review[]>(`/api/reviews/psychic/${id}`),
 };

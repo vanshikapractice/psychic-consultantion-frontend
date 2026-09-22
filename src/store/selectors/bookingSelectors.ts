@@ -5,7 +5,6 @@ import type { Booking } from "../../types";
 export const selectBookings = (state: RootState) => state.bookings.items;
 export const selectBookingLoading = (state: RootState) => state.bookings.loading;
 export const selectBookingError = (state: RootState) => state.bookings.error;
-export const selectBookingFilter = (state: RootState) => state.bookings.filter;
 
 export const selectUpcomingBookings = createSelector(
   [selectBookings],

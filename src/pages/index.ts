@@ -8,3 +8,4 @@ export { ConsultationPage } from "./Consultation";
 export { ReviewPage } from "./Review";
 export { Profile } from "./Profile";
 export { NotFound } from "./NotFound";
+export { PsychicDashboard } from "./PsychicDashboard";

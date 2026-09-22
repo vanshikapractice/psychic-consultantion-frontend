@@ -11,10 +11,9 @@ import {
   selectBookingError,
   selectUpcomingBookings,
   selectPastBookings,
-  setBookingFilter,
   cancelBooking,
-  type BookingsFilter,
 } from "../../store";
+import { selectAuthUser } from "../../store/selectors/authSelectors";
 import type { Booking, BookingStatus } from "../../types";
 import { formatDateTime } from "../../utils/dateFormat";
 
@@ -34,19 +33,17 @@ const STATUS_VARIANT: Record<BookingStatus, "warning" | "success" | "error" | "n
 
 export function BookingList() {
   const dispatch = useAppDispatch();
+  const user = useAppSelector(selectAuthUser);
   const loading = useAppSelector(selectBookingLoading);
   const error = useAppSelector(selectBookingError);
-  const filter = useAppSelector((state) => state.bookings.filter) as BookingsFilter;
   const upcoming = useAppSelector(selectUpcomingBookings);
   const past = useAppSelector(selectPastBookings);
+  const isPsychic = user?.role === "psychic";
 
   useEffect(() => {
+    const filter = isPsychic ? "psychic" : "customer";
     dispatch({ type: "bookings/fetch", payload: filter });
-  }, [dispatch, filter]);
-
-  const handleFilterChange = (next: BookingsFilter) => {
-    dispatch(setBookingFilter(next));
-  };
+  }, [dispatch, isPsychic]);
 
   const handleCancel = (id: string) => {
     dispatch(cancelBooking(id));
@@ -65,7 +62,7 @@ export function BookingList() {
     return (
       <div className="state-container">
         <p role="alert">{error}</p>
-        <Button variant="secondary" onClick={() => dispatch({ type: "bookings/fetch", payload: filter })}>
+        <Button variant="secondary" onClick={() => dispatch({ type: "bookings/fetch", payload: isPsychic ? "psychic" : "customer" })}>
           Retry
         </Button>
       </div>
@@ -74,48 +71,31 @@ export function BookingList() {
 
   return (
     <div className="booking-list">
-      <div className="booking-list__filters">
-        <Button
-          variant={filter === "all" ? "primary" : "outline"}
-          size="sm"
-          onClick={() => handleFilterChange("all")}
-        >
-          All
-        </Button>
-        <Button
-          variant={filter === "customer" ? "primary" : "outline"}
-          size="sm"
-          onClick={() => handleFilterChange("customer")}
-        >
-          As Customer
-        </Button>
-        <Button
-          variant={filter === "psychic" ? "primary" : "outline"}
-          size="sm"
-          onClick={() => handleFilterChange("psychic")}
-        >
-          As Psychic
-        </Button>
-      </div>
-
       {upcoming.length === 0 && past.length === 0 && (
         <div className="state-container">
-          <p>No bookings yet. Browse our psychics to get started!</p>
-          <Link to="/">
-            <Button variant="primary">Find a Psychic</Button>
-          </Link>
+          <p>
+            {isPsychic
+              ? "No session requests yet. Customers will appear here after they book with you."
+              : "No bookings yet. Browse our psychics to get started!"}
+          </p>
+          {!isPsychic && (
+            <Link to="/">
+              <Button variant="primary">Find a Psychic</Button>
+            </Link>
+          )}
         </div>
       )}
 
       {upcoming.length > 0 && (
         <>
-          <h3>Upcoming</h3>
+          <h3>{isPsychic ? "Upcoming sessions" : "Upcoming"}</h3>
           <div className="booking-list__grid">
             {upcoming.map((b: Booking) => (
               <BookingCard
                 key={b.id}
                 booking={b}
                 onCancel={handleCancel}
+                isPsychic={isPsychic}
               />
             ))}
           </div>
@@ -124,13 +104,14 @@ export function BookingList() {
 
       {past.length > 0 && (
         <>
-          <h3>Past Appointments</h3>
+          <h3>Past appointments</h3>
           <div className="booking-list__grid">
             {past.map((b: Booking) => (
               <BookingCard
                 key={b.id}
                 booking={b}
                 onCancel={handleCancel}
+                isPsychic={isPsychic}
               />
             ))}
           </div>
@@ -143,16 +124,18 @@ export function BookingList() {
 interface BookingCardProps {
   booking: Booking;
   onCancel: (id: string) => void;
+  isPsychic: boolean;
 }
 
-function BookingCard({ booking, onCancel }: BookingCardProps) {
+function BookingCard({ booking, onCancel, isPsychic }: BookingCardProps) {
   const isUpcoming = useMemo(
     () =>
-      new Date(booking.dateTime).getTime() >
-      Date.now() &&
-      booking.status !== "canceled",
-    [booking.dateTime, booking.status]
+      booking.status !== "canceled" &&
+      booking.status !== "completed",
+    [booking.status]
   );
+
+  const peerLabel = isPsychic ? booking.customerName || "Customer" : booking.psychicName;
 
   return (
     <Card
@@ -169,33 +152,34 @@ function BookingCard({ booking, onCancel }: BookingCardProps) {
       <div className="booking-card__content">
         <div className="booking-card__participants">
           <div>
-            <strong>Customer:</strong> {booking.customerName}
-          </div>
-          <div>
-            <strong>Psychic:</strong> {booking.psychicName}
+            <strong>{isPsychic ? "Customer" : "Psychic"}:</strong> {peerLabel}
           </div>
           <div>
             <strong>Duration:</strong> {booking.duration} min
           </div>
         </div>
 
-        {isUpcoming && booking.status === "confirmed" && (
-          <Link to={`/consultation/${booking.id}`}>
+        <div className="booking-card__actions">
+          <Link to={`/booking/${booking.id}`}>
             <Button variant="primary" size="sm">
-              Start Consultation
+              {isPsychic
+                ? booking.status === "pending"
+                  ? "Review request"
+                  : "Open session"
+                : "View booking"}
             </Button>
           </Link>
-        )}
 
-        {isUpcoming && booking.status === "pending" && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onCancel(booking.id)}
-          >
-            Cancel Booking
-          </Button>
-        )}
+          {!isPsychic && isUpcoming && booking.status === "pending" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onCancel(booking.id)}
+            >
+              Cancel
+            </Button>
+          )}
+        </div>
       </div>
     </Card>
   );

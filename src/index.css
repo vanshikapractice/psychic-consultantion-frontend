@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --color-text: #6b6375;
   --color-text-h: #08060d;
@@ -49,7 +53,8 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+
+:root {
     --color-text: #9ca3af;
     --color-text-h: #f3f4f6;
     --color-bg: #16171d;

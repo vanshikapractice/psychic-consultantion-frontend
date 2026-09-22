@@ -15,8 +15,8 @@ type ConsultationAction = Action<string>;
 function* startConsultationSaga(action: ConsultationAction & { payload: string }): Generator<any, void, any> {
   try {
     yield put(setLoading(true));
-    const consultation: any = yield call(() => consultationsApi.start(action.payload));
-    yield put(setActiveConsultation(consultation));
+    const result: any = yield call(() => consultationsApi.start(action.payload));
+    yield put(setActiveConsultation(result.consultation ?? result));
     yield put(setRunning(true));
     yield put(setError(null));
   } catch (err) {
@@ -24,9 +24,15 @@ function* startConsultationSaga(action: ConsultationAction & { payload: string }
   }
 }
 
-function* endConsultationSaga(action: ConsultationAction & { payload: { consultationId: string } }): Generator<any, void, any> {
+function* endConsultationSaga(action: ConsultationAction & { payload: { consultationId: string; transcript?: string; finalAmount?: number } }): Generator<any, void, any> {
   try {
-    const consultation: any = yield call(() => consultationsApi.end(action.payload.consultationId));
+    const consultation: any = yield call(() =>
+      consultationsApi.end({
+        consultationId: action.payload.consultationId,
+        transcript: action.payload.transcript,
+        finalAmount: action.payload.finalAmount,
+      })
+    );
     yield put(completeConsultation(consultation));
     yield put(setError(null));
   } catch (err) {
@@ -43,7 +49,7 @@ function* fetchConsultationSaga(action: ConsultationAction & { payload: string }
       const startMs = new Date(data.startTime).getTime();
       const secondsSinceStart = Math.floor((Date.now() - startMs) / 1000);
       yield put(setElapsed(secondsSinceStart > 0 ? secondsSinceStart : 0));
-      yield put(setRunning(secondsSinceStart > 0));
+      yield put(setRunning(true));
     } else if (data.endTime && data.startTime) {
       const startMs = new Date(data.startTime).getTime();
       const endMs = new Date(data.endTime).getTime();

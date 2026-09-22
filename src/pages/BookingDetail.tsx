@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Badge, Button, Card, Spinner } from "../components/ui";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
@@ -6,11 +6,10 @@ import {
   selectBookingById,
   selectBookingLoading,
   selectBookingError,
-  selectBookingFilter,
   updateBookingStatus,
 } from "../store";
 import { selectAuthUser } from "../store/selectors/authSelectors";
-import { consultationsApi } from "../api";
+import { bookingsApi, consultationsApi } from "../api";
 import { formatDateTime } from "../utils/dateFormat";
 
 export function BookingDetail() {
@@ -18,22 +17,38 @@ export function BookingDetail() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectAuthUser);
-  const booking = useAppSelector((state) => selectBookingById(id ?? "")(state));
+  const bookingFromStore = useAppSelector((state) => selectBookingById(id ?? "")(state));
   const loading = useAppSelector(selectBookingLoading);
   const error = useAppSelector(selectBookingError);
-  const currentFilter = useAppSelector(selectBookingFilter);
 
+  const [booking, setBooking] = useState(bookingFromStore);
+  const [fetching, setFetching] = useState(!bookingFromStore);
   const [starting, setStarting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    if (bookingFromStore) {
+      setBooking(bookingFromStore);
+      return;
+    }
+    setFetching(true);
+    bookingsApi
+      .get(id)
+      .then((loaded) => {
+        setBooking(loaded);
+      })
+      .catch((err) => setActionError((err as Error).message))
+      .finally(() => setFetching(false));
+  }, [bookingFromStore, dispatch, id]);
 
   const handleStartConsultation = async () => {
     if (!booking) return;
     setStarting(true);
     setActionError(null);
     try {
-      const consultation = await consultationsApi.start(booking.id);
-      dispatch(updateBookingStatus({ id: booking.id, status: "confirmed" }));
-      dispatch({ type: "bookings/fetch", payload: currentFilter });
+      const { consultation } = await consultationsApi.startOrResume(booking.id);
       navigate(`/consultation/${consultation.id}`);
     } catch (err) {
       setActionError((err as Error).message);
@@ -42,13 +57,22 @@ export function BookingDetail() {
     }
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!booking) return;
-    dispatch(updateBookingStatus({ id: booking.id, status: "confirmed" }));
-    dispatch({ type: "bookings/fetch", payload: currentFilter });
+    setConfirming(true);
+    setActionError(null);
+    try {
+      const updated = await bookingsApi.updateStatus(booking.id, "confirmed");
+      setBooking(updated);
+      dispatch(updateBookingStatus({ id: booking.id, status: "confirmed" }));
+    } catch (err) {
+      setActionError((err as Error).message);
+    } finally {
+      setConfirming(false);
+    }
   };
 
-  if (loading) {
+  if (loading || fetching) {
     return (
       <div className="state-container">
         <Spinner size="lg" />
@@ -60,7 +84,7 @@ export function BookingDetail() {
   if (error || !booking) {
     return (
       <div className="state-container">
-        <p role="alert">{error ?? "Booking not found."}</p>
+        <p role="alert">{error ?? actionError ?? "Booking not found."}</p>
         <Link to="/bookings">
           <Button variant="secondary">Back to Bookings</Button>
         </Link>
@@ -71,13 +95,16 @@ export function BookingDetail() {
   const isCustomer = user?.role === "customer";
   const isPsychic = user?.role === "psychic";
   const canStart =
-    (isCustomer || isPsychic) && booking.status === "confirmed";
+    (isCustomer || isPsychic) &&
+    booking.status !== "canceled" &&
+    booking.status !== "completed";
   const canConfirm = isPsychic && booking.status === "pending";
 
   return (
     <div className="page">
       <Card
-        title={isCustomer ? "Your Booking" : "Booking Details"}
+        title={isCustomer ? "Your Booking" : "Session request"}
+        subtitle={isPsychic ? "Review and confirm before the live chat" : undefined}
         headerAction={
           <Link to="/bookings">
             <Button variant="ghost" size="sm">
@@ -90,7 +117,7 @@ export function BookingDetail() {
           <div className="booking-detail__participants">
             <div className="booking-detail__participant">
               <span className="booking-detail__label">Customer</span>
-              <span>{booking.customerName}</span>
+              <span>{booking.customerName || "—"}</span>
             </div>
             <div className="booking-detail__participant">
               <span className="booking-detail__label">Psychic</span>
@@ -112,20 +139,27 @@ export function BookingDetail() {
                 booking.status === "confirmed"
                   ? "success"
                   : booking.status === "canceled"
-                  ? "error"
-                  : "warning"
+                    ? "error"
+                    : "warning"
               }
             >
               {booking.status}
             </Badge>
           </div>
 
+          {booking.notes && (
+            <div className="booking-detail__notes">
+              <span className="booking-detail__label">Notes</span>
+              <p>{booking.notes}</p>
+            </div>
+          )}
+
           {actionError && <p role="alert">{actionError}</p>}
 
           <div className="booking-detail__actions">
             {canConfirm && (
-              <Button variant="secondary" onClick={handleConfirm}>
-                Confirm Appointment
+              <Button variant="secondary" loading={confirming} onClick={handleConfirm}>
+                Confirm appointment
               </Button>
             )}
             {canStart && (
@@ -135,7 +169,7 @@ export function BookingDetail() {
                 disabled={starting}
                 onClick={handleStartConsultation}
               >
-                {starting ? "Starting…" : "Start Consultation"}
+                {starting ? "Starting…" : isPsychic ? "Join live session" : "Start consultation"}
               </Button>
             )}
           </div>

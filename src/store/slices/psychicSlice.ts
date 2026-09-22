@@ -1,8 +1,9 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { resetApp } from "../resetAction";
 import type { Psychic, PsychicsFilter } from "../../types";
 
 interface PsychicState {
-  items: Psychic[];
+  psychics: Psychic[];
   selected: Psychic | null;
   loading: boolean;
   error: string | null;
@@ -10,7 +11,7 @@ interface PsychicState {
 }
 
 const initialState: PsychicState = {
-  items: [],
+  psychics: [],
   selected: null,
   loading: false,
   error: null,
@@ -35,7 +36,7 @@ export const psychicSlice = createSlice({
       state.loading = false;
     },
     setPsychics: (state, action: PayloadAction<Psychic[]>) => {
-      state.items = action.payload;
+      state.psychics = action.payload;
       state.loading = false;
       state.error = null;
     },
@@ -46,11 +47,12 @@ export const psychicSlice = createSlice({
       if (state.selected) {
         state.selected = { ...state.selected, ...action.payload };
       }
-      const idx = state.items.findIndex((p) => p.id === action.payload.id);
+      const idx = state.psychics.findIndex((p) => p.id === action.payload.id);
       if (idx !== -1) {
-        state.items[idx] = { ...state.items[idx], ...action.payload };
+        state.psychics[idx] = { ...state.psychics[idx], ...action.payload };
       }
     },
+    [resetApp.type]: () => initialState,
   },
 });
 

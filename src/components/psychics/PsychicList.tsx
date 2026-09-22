@@ -1,92 +1,185 @@
-import { useEffect } from "react";
-import { PsychicCard } from "./PsychicCard";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../../store";
+import { Link } from "react-router-dom";
+import { Badge, Card, SearchBar } from "../ui";
 import { PsychicFilter } from "./PsychicFilter";
-import { Button, Spinner } from "../ui";
-import { useAppDispatch, useAppSelector } from "../../store/hooks";
-import {
-  selectFilteredPsychics,
-  selectPsychicLoading,
-  selectPsychicError,
-  setPsychicFilter,
-  resetFilter,
-  type PsychicsFilter,
-} from "../../store";
-import type { Psychic } from "../../types";
+import type { PsychicsFilter } from "../../types";
 
-export function PsychicList() {
-  const dispatch = useAppDispatch();
-  const psychics = useAppSelector(selectFilteredPsychics);
-  const loading = useAppSelector(selectPsychicLoading);
-  const error = useAppSelector(selectPsychicError);
-  const currentFilter = useAppSelector((state) => state.psychics.filter) as PsychicsFilter;
+interface PsychicsListProps {
+  showSearch?: boolean;
+  showFilter?: boolean;
+}
 
-  const handleSearchChange = (value: string) => {
-    dispatch(setPsychicFilter({ search: value }));
-  };
+const PsychicsList: React.FC<PsychicsListProps> = ({
+  showSearch = false,
+  showFilter = false,
+}: PsychicsListProps) => {
+  const dispatch = useDispatch<AppDispatch>();
 
-  const handleFilterChange = (next: Partial<PsychicsFilter>) => {
-    dispatch(setPsychicFilter(next));
-  };
+  const { psychics, loading, error } = useSelector(
+    (state: RootState) => state.psychics
+  );
 
-  const handleReset = () => {
-    dispatch(resetFilter());
-  };
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilter, setActiveFilter] = useState<PsychicsFilter>({
+    search: "",
+    specialty: undefined,
+    minRating: undefined,
+    maxRate: undefined,
+  });
 
   useEffect(() => {
-    dispatch({ type: "psychics/fetch" });
-  }, [dispatch, currentFilter.specialty, currentFilter.minRating, currentFilter.maxRate]);
+    dispatch({
+      type: "psychics/fetch",
+      payload: {
+        specialty: activeFilter.specialty,
+        minRating: activeFilter.minRating,
+        maxRate: activeFilter.maxRate,
+      },
+    });
+  }, [dispatch, activeFilter]);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+  };
+
+  const filtered = searchTerm
+    ? psychics.filter((psychic) => {
+        const term = searchTerm.toLowerCase();
+        const specialties = Array.isArray(psychic.specialties)
+          ? psychic.specialties
+          : [];
+        return (
+          psychic.name.toLowerCase().includes(term) ||
+          specialties.some((s) => s.toLowerCase().includes(term)) ||
+          psychic.email.toLowerCase().includes(term)
+        );
+      })
+    : psychics;
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="state-container">
+        <p>Loading psychics...</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="state-container">
+        <p role="alert">{error}</p>
+        <button onClick={() => dispatch({ type: "psychics/fetch" })}>Retry</button>
+      </div>
+    );
+  }
+
+  // Empty state
+  if (!psychics || psychics.length === 0) {
+    return (
+      <div className="state-container">
+        <p>No psychics found.</p>
+        <button onClick={() => dispatch({ type: "psychics/fetch" })}>Refresh</button>
+      </div>
+    );
+  }
 
   return (
-    <div className="psychic-list">
-      <div className="psychic-list__search">
-        <input
-          type="search"
-          placeholder="Search psychics..."
-          value={currentFilter.search ?? ""}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="search-bar__input"
-        />
-      </div>
-
-      <PsychicFilter
-        active={currentFilter}
-        onChange={handleFilterChange}
-        onReset={handleReset}
-      />
-
-      {error && (
-        <div className="state-container">
-          <Spinner />
-          <p role="alert">{error}</p>
-          <Button variant="secondary" onClick={() => dispatch({ type: "psychics/fetch" })}>
-            Retry
-          </Button>
+    <div className="psychics-container">
+      {showSearch && (
+        <div className="psychics-container__search">
+          <SearchBar
+            value={searchTerm}
+            onChange={handleSearchChange}
+            onClear={handleClearSearch}
+            placeholder="Search by name, specialty, or email…"
+          />
         </div>
       )}
 
-      {!loading && !error && psychics.length === 0 && (
-        <div className="state-container">
-          <p>No psychics found with the current filters.</p>
-          <Button variant="outline" onClick={handleReset}>
-            Clear Filters
-          </Button>
+      {showFilter && (
+        <div className="psychics-container__filter">
+          <PsychicFilter
+            active={activeFilter}
+            onChange={(partial) =>
+              setActiveFilter((prev) => ({ ...prev, ...partial }))
+            }
+            onReset={() =>
+              setActiveFilter({
+                search: "",
+                specialty: undefined,
+                minRating: undefined,
+                maxRate: undefined,
+              })
+            }
+          />
         </div>
       )}
 
-      {loading && (
-        <div className="state-container">
-          <Spinner size="lg" />
-          <p>Finding your guides…</p>
-        </div>
-      )}
-
-      {!loading && !error && psychics.length > 0 && (
-        <div className="psychic-grid">
-          {psychics.map((p: Psychic) => (
-            <PsychicCard key={p.id} psychic={p} />
+      {filtered.length === 0 ? (
+        <p className="state-container">
+          No psychics match your search or filters.
+        </p>
+      ) : (
+        <div className="psychics-grid">
+          {filtered.map((psychic) => (
+            <Link
+              key={psychic.id}
+              to={`/psychic/${psychic.id}`}
+              className="psychic-card-link"
+            >
+              <Card hover className="psychic-card">
+                <div className="psychic-card__header">
+                  <img
+                    src={
+                      psychic.profileImage ||
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(psychic.name)}`
+                    }
+                    alt={psychic.name}
+                    className="psychic-card__avatar"
+                  />
+                  <div className="psychic-card__info">
+                    <h3>{psychic.name}</h3>
+                    <div className="psychic-card__meta">
+                      {psychic.specialties?.map((s: string) => (
+                        <Badge key={s} variant="primary" size="sm">
+                          {s}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="psychic-card__details">
+                  <div className="psychic-card__rating">
+                    <span>⭐ {psychic.rating ?? "—"}</span>
+                    <span>({psychic.reviewCount ?? 0} reviews)</span>
+                  </div>
+                  <div className="psychic-card__rate">
+                    ${psychic.rate ?? 0}/min
+                  </div>
+                  <Badge
+                    variant={
+                      psychic.status === "online" ? "success" : "neutral"
+                    }
+                    size="sm"
+                  >
+                    {psychic.status === "online" ? "Online" : "Offline"}
+                  </Badge>
+                </div>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
     </div>
   );
-}
+};
+
+export { PsychicsList };

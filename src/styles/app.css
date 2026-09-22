@@ -794,7 +794,167 @@
   min-height: 60vh;
 }
 
+.page__lead {
+  margin: 8px 0 24px;
+  color: var(--color-text);
+  max-width: 640px;
+}
+
+.consultation-room {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) 1fr;
+  gap: 20px;
+  min-height: calc(100vh - var(--layout-header-height) - 120px);
+  width: 100%;
+}
+
+.consultation-room--customer .consultation-room__sidebar-inner {
+  border-left: 4px solid var(--color-accent);
+}
+
+.consultation-room--psychic .consultation-room__sidebar-inner {
+  border-left: 4px solid var(--color-info);
+}
+
+.consultation-room__sidebar-inner {
+  background: var(--color-card);
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+}
+
+.consultation-room__title {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-neutral);
+}
+
+.consultation-room__peer {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-text-h);
+}
+
+.consultation-room__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.consultation-room__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-neutral);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.consultation-room__timer {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.consultation-room__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.consultation-room__notes {
+  font-size: 14px;
+  line-height: 1.5;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+
+.consultation-room__chat {
+  min-height: 520px;
+  display: flex;
+}
+
+.booking-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dashboard__header,
+.psychic-home__header {
+  margin-bottom: 24px;
+}
+
+.dashboard__stats,
+.psychic-home__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  text-align: center;
+}
+
+.stat-card__value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-text-h);
+}
+
+.stat-card__label {
+  font-size: 13px;
+  color: var(--color-neutral);
+  margin-top: 4px;
+}
+
+.dashboard__section {
+  margin-bottom: 40px;
+}
+
+.dashboard__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.requests-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.request-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.request-card__field {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.request-card__label {
+  color: var(--color-neutral);
+}
+
 @media (max-width: 768px) {
+  .consultation-room {
+    grid-template-columns: 1fr;
+  }
+
   .header__nav {
     display: none;
   }

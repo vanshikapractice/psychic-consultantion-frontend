@@ -1,6 +1,7 @@
 import { call, put, takeEvery } from "redux-saga/effects";
 import type { Action } from "redux";
-import { authApi } from "../../api";
+import { authApi, apiClient, normalizeUser } from "../../api";
+import type { RegisterRequest } from "../../types";
 import {
   setAuth,
   setAuthLoading,
@@ -14,9 +15,10 @@ function* handleLogin(action: AuthAction & { payload: { email: string; password:
   try {
     yield put(setAuthLoading(true));
     const response: any = yield call(() => authApi.login(action.payload));
+    const user = normalizeUser(response.data.user) ?? response.data.user;
     yield put(
       setAuth({
-        user: response.data.user,
+        user,
         token: response.data.token,
       })
     );
@@ -25,13 +27,14 @@ function* handleLogin(action: AuthAction & { payload: { email: string; password:
   }
 }
 
-function* handleRegister(action: AuthAction & { payload: { name: string; email: string; password: string; role: string } }): Generator<any, void, any> {
+function* handleRegister(action: AuthAction & { payload: RegisterRequest }): Generator<any, void, any> {
   try {
     yield put(setAuthLoading(true));
     const response: any = yield call(() => authApi.register(action.payload as any));
+    const user = normalizeUser(response.data.user) ?? response.data.user;
     yield put(
       setAuth({
-        user: response.data.user,
+        user,
         token: response.data.token,
       })
     );
@@ -51,8 +54,13 @@ function* handleUpdateProfile(action: AuthAction & { payload: { name?: string; p
   }
 }
 
+function* handleLogout(): Generator<any, void, any> {
+  yield call(() => apiClient.setToken(null));
+}
+
 export function* watchAuthSagas(): Generator<any, void, any> {
   yield takeEvery("auth/login", handleLogin);
   yield takeEvery("auth/register", handleRegister);
   yield takeEvery("auth/updateProfile", handleUpdateProfile);
+  yield takeEvery("auth/logout", handleLogout);
 }

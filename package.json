@@ -6,17 +6,26 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",
+    "@tanstack/react-query": "^5.103.0",
+    "autoprefixer": "^10.6.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.46.0",
+    "postcss": "^8.5.28",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-redux": "^9.3.0",
     "react-router-dom": "^7.18.3",
+    "react-window": "^1.8.10",
     "redux": "^5.0.1",
-    "redux-saga": "^1.5.1"
+    "redux-saga": "^1.5.1",
+    "tailwind-merge": "^3.7.0",
+    "tailwindcss": "^3.4.19"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -24,6 +33,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@types/react-router-dom": "^5.3.3",
+    "@types/react-window": "^1.8.8",
     "@vitejs/plugin-react": "^6.1.0",
     "eslint": "^10.9.0",
     "eslint-plugin-react-hooks": "^7.1.1",

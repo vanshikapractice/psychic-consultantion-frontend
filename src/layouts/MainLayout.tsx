@@ -3,9 +3,15 @@ import { Avatar } from "../components/ui";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { selectAuthUser, logout } from "../store";
 
-const navItems = [
+const customerNavItems = [
   { to: "/", label: "Find a Psychic", icon: "🔮" },
   { to: "/bookings", label: "My Bookings", icon: "📅" },
+  { to: "/profile", label: "Profile", icon: "👤" },
+];
+
+const psychicNavItems = [
+  { to: "/psychic/dashboard", label: "Dashboard", icon: "📊" },
+  { to: "/bookings", label: "My Sessions", icon: "📅" },
   { to: "/profile", label: "Profile", icon: "👤" },
 ];
 
@@ -13,12 +19,14 @@ export function MainLayout() {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectAuthUser);
   const location = useLocation();
+  const isPsychic = user?.role === "psychic";
+  const navItems = isPsychic ? psychicNavItems : customerNavItems;
 
   return (
     <div className="layout">
       <header className="header">
         <div className="container header__container">
-          <Link to="/" className="header__logo">
+          <Link to={isPsychic ? "/psychic/dashboard" : "/"} className="header__logo">
             🔮 PsychicConnect
           </Link>
 

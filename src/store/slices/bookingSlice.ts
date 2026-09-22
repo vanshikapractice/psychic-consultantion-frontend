@@ -1,29 +1,23 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { resetApp } from "../resetAction";
 import type { Booking, BookingStatus } from "../../types";
-
-export type BookingsFilter = "customer" | "psychic" | "all";
 
 interface BookingState {
   items: Booking[];
   loading: boolean;
   error: string | null;
-  filter: BookingsFilter;
 }
 
 const initialState: BookingState = {
   items: [],
   loading: false,
   error: null,
-  filter: "all",
 };
 
 export const bookingSlice = createSlice({
   name: "bookings",
   initialState,
   reducers: {
-    setFilter: (state, action: PayloadAction<BookingsFilter>) => {
-      state.filter = action.payload;
-    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
@@ -54,11 +48,11 @@ export const bookingSlice = createSlice({
     createBooking: (state, action: PayloadAction<Booking>) => {
       state.items.push(action.payload);
     },
+    [resetApp.type]: () => initialState,
   },
 });
 
 export const {
-  setFilter,
   setLoading,
   setError,
   setBookings,

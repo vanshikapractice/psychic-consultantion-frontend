@@ -7,7 +7,6 @@ export {
   updateUser,
 } from "./store/slices/authSlice";
 export {
-  setFilter as setBookingFilter,
   setLoading as setBookingLoading,
   setError as setBookingError,
   setBookings,
@@ -15,7 +14,6 @@ export {
   updateBookingStatus,
   cancelBooking,
   createBooking,
-  type BookingsFilter,
 } from "./store/slices/bookingSlice";
 export {
   setFilter as setPsychicFilter,
@@ -33,6 +31,7 @@ export {
   setActiveConsultation,
   setRunning,
   setElapsed,
+  incrementElapsed,
   completeConsultation,
 } from "./store/slices/consultationSlice";
 export {
@@ -52,7 +51,6 @@ export {
   selectBookings,
   selectBookingLoading,
   selectBookingError,
-  selectBookingFilter,
   selectUpcomingBookings,
   selectPastBookings,
   selectBookingById,

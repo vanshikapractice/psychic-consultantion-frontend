@@ -1,8 +1,7 @@
 import { createSelector } from "@reduxjs/toolkit";
 import type { RootState } from "../store";
-import type { Psychic } from "../../types";
 
-export const selectPsychics = (state: RootState) => state.psychics.items;
+export const selectPsychics = (state: RootState) => state.psychics.psychics;
 export const selectSelectedPsychic = (state: RootState) => state.psychics.selected;
 export const selectPsychicLoading = (state: RootState) => state.psychics.loading;
 export const selectPsychicError = (state: RootState) => state.psychics.error;
@@ -14,21 +13,27 @@ export const selectFilteredPsychics = createSelector(
     let results = psychics;
     if (filter.search?.trim()) {
       const term = filter.search.toLowerCase();
-      results = psychics.filter(
-        (p: Psychic) =>
-          p.name.toLowerCase().includes(term) ||
-          p.specialties.some((s) => s.toLowerCase().includes(term)) ||
-          p.email.toLowerCase().includes(term)
-      );
+      results = psychics.filter((psychic) => {
+        const specialties = Array.isArray(psychic.specialties) ? psychic.specialties : [];
+        return (
+          psychic.name.toLowerCase().includes(term) ||
+          specialties.some((specialty) => specialty.toLowerCase().includes(term)) ||
+          psychic.email.toLowerCase().includes(term)
+        );
+      });
     }
     if (filter.specialty) {
-      results = results.filter((p: Psychic) => p.specialties.includes(filter.specialty!));
+      results = results.filter((psychic) =>
+        (Array.isArray(psychic.specialties) ? psychic.specialties : []).includes(filter.specialty!)
+      );
     }
-    if (filter.minRating !== undefined) {
-      results = results.filter((p: Psychic) => p.rating >= (filter.minRating as number));
+    const minRating = filter.minRating;
+    if (minRating !== undefined) {
+      results = results.filter((psychic) => Number(psychic.rating) >= minRating);
     }
-    if (filter.maxRate !== undefined) {
-      results = results.filter((p: Psychic) => p.rate <= (filter.maxRate as number));
+    const maxRate = filter.maxRate;
+    if (maxRate !== undefined) {
+      results = results.filter((psychic) => Number(psychic.rate) <= maxRate);
     }
     return results;
   }

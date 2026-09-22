@@ -83,11 +83,11 @@ export function useConsultation(initialConsultationId?: string) {
     elapsed,
     formattedDuration: formattedDuration(elapsed),
     startConsultation: (bookingId: string) =>
-      consultationsApi.start(bookingId),
+      consultationsApi.start(bookingId).then((result) => result.consultation),
     endConsultation: async () => {
       if (!consultation?.id) return;
       stopTimer();
-      const data = await consultationsApi.end(consultation.id);
+      const data = await consultationsApi.end({ consultationId: consultation.id });
       setConsultation(data);
       setIsRunning(false);
       return data;

@@ -3,11 +3,24 @@ export {
   authApi,
   decodeUserProfile,
   getCurrentUserProfile,
+  normalizeUser,
   type AuthResponse,
 } from "./auth";
-export { psychicsApi, type CreatePsychicPayload } from "./psychics";
+export {
+  psychicsApi,
+  normalizePsychic,
+  normalizePsychics,
+  normalizePsychicResponse,
+  type CreatePsychicPayload,
+} from "./psychics";
+export { rolesApi } from "./roles";
+export type { RoleRecord } from "../types";
 export { bookingsApi, type CreateBookingPayload } from "./bookings";
-export { consultationsApi, type StartConsultationPayload } from "./consultations";
+export {
+  consultationsApi,
+  type StartConsultationResult,
+  type EndConsultationPayload,
+} from "./consultations";
 export { reviewsApi, type CreateReviewPayload } from "./reviews";
 export { healthApi } from "./health";
 export {

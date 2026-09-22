@@ -1,6 +1,7 @@
 import { call, put, takeLatest } from "redux-saga/effects";
 import type { Action } from "redux";
-import { psychicsApi } from "../../api";
+import { psychicsApi, normalizePsychicResponse } from "../../api";
+import type { Psychic } from "../../types";
 import {
   setLoading,
   setError,
@@ -11,22 +12,45 @@ import {
 
 type PsychicAction = Action<string>;
 
-function* fetchPsychics(action: PsychicAction & { payload?: { specialty?: string; minRating?: number; maxRate?: number } }): Generator<any, void, any> {
+function* fetchPsychics(
+  action: PsychicAction & {
+    payload?: {
+      specialty?: string;
+      minRating?: number;
+      maxRate?: number;
+    };
+  }
+): Generator<any, void, any> {
   try {
     yield put(setLoading(true));
+
     const filters = action.payload ?? {};
-    const data: any = yield call(() => psychicsApi.getPsychics(filters));
+
+    const data: Psychic[] = yield call(() =>
+      psychicsApi.getPsychics(filters)
+    );
+
     yield put(setPsychics(data));
+
   } catch (err) {
-    yield put(setError((err as Error).message));
+    yield put(
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to fetch psychics"
+      )
+    );
+  } finally {
+    yield put(setLoading(false));
   }
 }
 
 function* fetchPsychic(action: PsychicAction & { payload: string }): Generator<any, void, any> {
   try {
     yield put(setLoading(true));
-    const data: any = yield call(() => psychicsApi.getPsychic(action.payload));
-    yield put(setSelectedPsychic(data));
+    const data: unknown = yield call(() => psychicsApi.getPsychic(action.payload));
+    const psychic = normalizePsychicResponse(data);
+    yield put(setSelectedPsychic(psychic));
     yield put(setError(null));
   } catch (err) {
     yield put(setError((err as Error).message));
@@ -36,8 +60,11 @@ function* fetchPsychic(action: PsychicAction & { payload: string }): Generator<a
 function* updateProfileSaga(action: PsychicAction & { payload: { name?: string; profileImage?: string } }): Generator<any, void, any> {
   try {
     yield put(setLoading(true));
-    const updated: any = yield call(() => psychicsApi.updateProfile(action.payload));
-    yield put(updatePsychicProfile(updated));
+    const updated: unknown = yield call(() => psychicsApi.updateProfile(action.payload));
+    const psychic = normalizePsychicResponse(updated);
+    if (psychic) {
+      yield put(updatePsychicProfile(psychic));
+    }
     yield put(setError(null));
   } catch (err) {
     yield put(setError((err as Error).message));
