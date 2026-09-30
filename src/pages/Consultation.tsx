@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Badge, Button, Spinner } from "../components/ui";
 import { ConsultationSummary } from "../components/consultations";
@@ -12,7 +12,7 @@ import {
   selectIsRunning,
   selectElapsed,
   selectFormattedDuration,
-  incrementElapsed,
+  setElapsed,
 } from "../store";
 import { bookingsApi } from "../api";
 import { setActiveConsultation } from "../store";
@@ -29,6 +29,8 @@ export function ConsultationPage() {
   const isRunning = useAppSelector(selectIsRunning);
   const elapsed = useAppSelector(selectElapsed);
   const formattedDuration = useAppSelector(selectFormattedDuration);
+  const [durationWarning, setDurationWarning] = useState(false);
+  const autoEndRequestedRef = useRef<string | null>(null);
 
   const isPsychic = user?.role === "psychic";
   const isCustomer = user?.role === "customer";
@@ -41,7 +43,13 @@ export function ConsultationPage() {
 
   useEffect(() => {
     if (!consultation?.bookingId) return;
-    if (consultation.customerName && consultation.psychicName) return;
+    if (
+      consultation.customerName &&
+      consultation.psychicName &&
+      consultation.duration > 0
+    ) {
+      return;
+    }
     bookingsApi
       .get(consultation.bookingId)
       .then((booking) => {
@@ -53,6 +61,7 @@ export function ConsultationPage() {
             notes: booking.notes,
             rate: booking.rate || booking.pricePerMinute,
             totalPrice: consultation.totalPrice || booking.totalPrice,
+            duration: consultation.duration || booking.durationMinutes || booking.duration,
           })
         );
       })
@@ -61,12 +70,29 @@ export function ConsultationPage() {
   }, [consultation?.id, consultation?.bookingId, dispatch]);
 
   useEffect(() => {
-    if (!isRunning || consultation?.status !== "active") return;
+    if (!isRunning || consultation?.status !== "active" || !consultation.startTime) return;
+    const startMs = new Date(consultation.startTime).getTime();
+    if (!Number.isFinite(startMs)) return;
+
     const timer = window.setInterval(() => {
-      dispatch(incrementElapsed());
+      dispatch(setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000))));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [dispatch, isRunning, consultation?.status]);
+  }, [consultation?.startTime, consultation?.status, dispatch, isRunning]);
+
+  const durationSeconds = consultation ? Math.max(0, consultation.duration * 60) : 0;
+  const remainingSeconds = durationSeconds > 0 ? durationSeconds - elapsed : null;
+  const durationExpired = remainingSeconds !== null && remainingSeconds <= 0;
+
+  useEffect(() => {
+    setDurationWarning(false);
+    autoEndRequestedRef.current = null;
+  }, [consultation?.id]);
+
+  useEffect(() => {
+    if (remainingSeconds === null || remainingSeconds <= 0 || remainingSeconds > 300) return;
+    setDurationWarning(true);
+  }, [remainingSeconds]);
 
   const handleEndSession = useCallback(() => {
     if (!consultation) return;
@@ -80,6 +106,21 @@ export function ConsultationPage() {
       },
     });
   }, [consultation, dispatch, elapsed]);
+
+  useEffect(() => {
+    if (
+      !consultation ||
+      consultation.status !== "active" ||
+      !isRunning ||
+      !durationExpired ||
+      autoEndRequestedRef.current === consultation.id
+    ) {
+      return;
+    }
+
+    autoEndRequestedRef.current = consultation.id;
+    handleEndSession();
+  }, [consultation, durationExpired, handleEndSession, isRunning]);
 
   if (loading) {
     return (
@@ -115,7 +156,7 @@ export function ConsultationPage() {
   if (consultation.status === "completed") {
     return (
       <div className="page">
-        <ConsultationSummary consultation={consultation} />
+        <ConsultationSummary consultation={consultation} canReview={isCustomer} />
         {isCustomer && (
           <div className="mt-4">
             <Link to={`/review/${consultation.id}`}>
@@ -162,6 +203,12 @@ export function ConsultationPage() {
             </div>
           </div>
 
+          {durationWarning && !durationExpired && (
+            <p className="consultation-room__warning" role="alert">
+              This consultation will end in less than 5 minutes.
+            </p>
+          )}
+
           <div className="consultation-room__actions">
             <Button
               variant="danger"
@@ -203,6 +250,7 @@ export function ConsultationPage() {
             psychicName={isCustomer ? consultation.psychicName : undefined}
             customerName={isPsychic ? peerName : undefined}
             consultationStatus={consultation.status}
+            durationExpired={durationExpired}
             variant={isPsychic ? "psychic" : "customer"}
           />
         )}

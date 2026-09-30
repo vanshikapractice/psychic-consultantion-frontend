@@ -12,6 +12,16 @@ import {
 
 type ConsultationAction = Action<string>;
 
+function errorCode(error: unknown): string | undefined {
+  const value = error as { errorCode?: unknown; details?: unknown };
+  if (value.errorCode) return String(value.errorCode);
+  if (value.details && typeof value.details === "object" && "code" in value.details) {
+    const code = (value.details as { code?: unknown }).code;
+    return code === undefined ? undefined : String(code);
+  }
+  return undefined;
+}
+
 function* startConsultationSaga(action: ConsultationAction & { payload: string }): Generator<any, void, any> {
   try {
     yield put(setLoading(true));
@@ -36,6 +46,19 @@ function* endConsultationSaga(action: ConsultationAction & { payload: { consulta
     yield put(completeConsultation(consultation));
     yield put(setError(null));
   } catch (err) {
+    if (errorCode(err) === "INVALID_CONSULTATION_STATUS") {
+      try {
+        const consultation: any = yield call(() =>
+          consultationsApi.get(action.payload.consultationId)
+        );
+        yield put(completeConsultation(consultation));
+        yield put(setError(null));
+        return;
+      } catch (refreshError) {
+        yield put(setError((refreshError as Error).message));
+        return;
+      }
+    }
     yield put(setError((err as Error).message));
   }
 }

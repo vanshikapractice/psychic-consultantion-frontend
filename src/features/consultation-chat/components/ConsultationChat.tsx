@@ -23,6 +23,7 @@ export interface ConsultationChatProps {
   psychicName?: string;
   customerName?: string;
   consultationStatus?: ConsultationStatus;
+  durationExpired?: boolean;
   variant?: "customer" | "psychic";
 }
 
@@ -40,6 +41,7 @@ export const ConsultationChat = forwardRef<ConsultationChatHandle, ConsultationC
       psychicName,
       customerName,
       consultationStatus,
+      durationExpired = false,
       variant = "customer",
     },
     ref
@@ -123,6 +125,7 @@ export const ConsultationChat = forwardRef<ConsultationChatHandle, ConsultationC
 
     const ended =
       chat.consultationEnded ||
+      durationExpired ||
       consultationStatus === "completed" ||
       consultationStatus === "canceled";
     const disconnected =

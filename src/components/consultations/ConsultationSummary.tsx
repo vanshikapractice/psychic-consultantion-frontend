@@ -5,9 +5,10 @@ import type { Consultation } from "../../types";
 
 interface ConsultationSummaryProps {
   consultation: Consultation;
+  canReview?: boolean;
 }
 
-export function ConsultationSummary({ consultation }: ConsultationSummaryProps) {
+export function ConsultationSummary({ consultation, canReview = false }: ConsultationSummaryProps) {
   return (
     <Card title="Consultation Summary" subtitle="Session completed">
       <div className="consultation-summary">
@@ -63,11 +64,13 @@ export function ConsultationSummary({ consultation }: ConsultationSummaryProps) 
           </div>
         )}
 
-        <Link to={`/review/${consultation.id}`}>
-          <Button variant="primary" className="consultation-summary__review-btn">
-            Leave a Review
-          </Button>
-        </Link>
+        {canReview && (
+          <Link to={`/review/${consultation.id}`}>
+            <Button variant="primary" className="consultation-summary__review-btn">
+              Leave a Review
+            </Button>
+          </Link>
+        )}
       </div>
     </Card>
   );

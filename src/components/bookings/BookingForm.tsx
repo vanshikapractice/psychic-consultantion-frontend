@@ -28,12 +28,19 @@ export function BookingForm({ psychic }: BookingFormProps) {
       return;
     }
 
-    const dateTime = new Date(`${date}T${time}`).toISOString();
+    const selectedDateTime = new Date(`${date}T${time}`);
     const now = Date.now();
-    if (new Date(dateTime).getTime() <= now) {
+    if (selectedDateTime.getTime() <= now) {
       setError("Please select a future date and time.");
       return;
     }
+
+    const offsetMinutes = -selectedDateTime.getTimezoneOffset();
+    const offsetSign = offsetMinutes >= 0 ? "+" : "-";
+    const absoluteOffsetMinutes = Math.abs(offsetMinutes);
+    const offsetHours = String(Math.floor(absoluteOffsetMinutes / 60)).padStart(2, "0");
+    const offsetRemainder = String(absoluteOffsetMinutes % 60).padStart(2, "0");
+    const dateTime = `${date}T${time}:00${offsetSign}${offsetHours}:${offsetRemainder}`;
 
     setSubmitting(true);
     dispatch({

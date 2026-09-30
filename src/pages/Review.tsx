@@ -3,12 +3,18 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button, Card, Spinner } from "../components/ui";
 import { ReviewForm } from "../components/reviews";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { selectActiveConsultation, selectConsultationLoading, selectConsultationError } from "../store";
+import {
+  selectActiveConsultation,
+  selectAuthUser,
+  selectConsultationLoading,
+  selectConsultationError,
+} from "../store";
 
 export function ReviewPage() {
   const { consultationId } = useParams<{ consultationId: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const user = useAppSelector(selectAuthUser);
   const consultation = useAppSelector(selectActiveConsultation);
   const loading = useAppSelector(selectConsultationLoading);
   const error = useAppSelector(selectConsultationError);
@@ -18,6 +24,17 @@ export function ReviewPage() {
       dispatch({ type: "consultations/fetch", payload: consultationId });
     }
   }, [dispatch, consultationId]);
+
+  if (user?.role !== "customer") {
+    return (
+      <div className="state-container">
+        <p role="alert">Only customers can submit consultation reviews.</p>
+        <Button variant="secondary" onClick={() => navigate(-1)}>
+          Go Back
+        </Button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

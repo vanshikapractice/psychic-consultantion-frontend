@@ -49,8 +49,8 @@ function mapStatus(status: string): ConsultationStatus {
 
 export function normalizeConsultation(raw: RawConsultation): Consultation {
   const duration =
-    raw.actual_duration_minutes ??
     raw.duration_minutes ??
+    raw.actual_duration_minutes ??
     0;
 
   const total =

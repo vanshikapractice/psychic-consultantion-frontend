@@ -110,6 +110,7 @@ export function useMessages({
         limit: PAGE_SIZE,
         offset: pageParam ?? 0,
         signal,
+        currentUserId: userId,
       }),
     initialPageParam: 0,
     getNextPageParam: (lastPage, allPages) =>
