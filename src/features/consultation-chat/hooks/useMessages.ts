@@ -17,6 +17,8 @@ export interface UseMessagesParams {
   userId: string | number;
   userName: string;
   participantType: "customer" | "psychic";
+  psychicName?: string;
+  customerName?: string;
   sendClientEvent: (event: ClientEvent) => boolean;
 }
 
@@ -55,18 +57,24 @@ function findPendingMatch(
 }
 
 function unwrapMessage(value: MessageServerEvent | Message | unknown): Message | null {
-  if (
-    typeof value === "object" &&
-    value !== null &&
-    "type" in value &&
-    value.type === "message" &&
-    "data" in value
-  ) {
-    return (value as { data: Message }).data;
+  if (typeof value !== "object" || value === null) return null;
+
+  const record = value as Record<string, unknown>;
+  if (record.type === "message") {
+    const nested = record.data ?? record.message ?? record.payload;
+    return unwrapMessage(nested);
   }
-  if (typeof value === "object" && value !== null && "id" in value) {
-    return value as Message;
+
+  if ("id" in record || "message_id" in record) return record as unknown as Message;
+
+  for (const key of ["data", "message", "payload"]) {
+    const nested = record[key];
+    if (nested && typeof nested === "object") {
+      const message = unwrapMessage(nested);
+      if (message) return message;
+    }
   }
+
   return null;
 }
 
@@ -91,6 +99,8 @@ export function useMessages({
   userId,
   userName,
   participantType,
+  psychicName,
+  customerName,
   sendClientEvent,
 }: UseMessagesParams): UseMessagesReturn {
   const query = useInfiniteQuery({
@@ -118,8 +128,18 @@ export function useMessages({
   const ackTimersRef = useRef<Map<string, number>>(new Map());
 
   const restMessages = useMemo(
-    () => query.data?.pages.flat() ?? [],
-    [query.data]
+    () =>
+      (query.data?.pages.flat() ?? []).map((message) => ({
+        ...message,
+        senderName:
+          String(message.senderId) === String(userId)
+            ? userName
+            : message.participantType === "psychic"
+              ? psychicName || message.senderName
+              : customerName || message.senderName,
+        isOwn: String(message.senderId) === String(userId),
+      })),
+    [customerName, psychicName, query.data, userId, userName]
   );
 
   const messages = useMemo(() => {
@@ -173,8 +193,6 @@ export function useMessages({
       sendClientEvent({
         type: "message",
         content: trimmed,
-        messageType: "text",
-        tempId,
       });
 
       const timer = window.setTimeout(() => {
@@ -205,8 +223,6 @@ export function useMessages({
       sendClientEvent({
         type: "message",
         content: retry.content,
-        messageType: "text",
-        tempId: retry.tempId ?? messageId,
       });
       const timer = window.setTimeout(() => {
         setOptimisticMessages((current) => {
@@ -228,15 +244,28 @@ export function useMessages({
     (event: MessageServerEvent | Message | unknown) => {
       const data = unwrapMessage(event);
       if (!data) return;
-      const message =
-        data.id && data.createdAt
-          ? data
-          : normalizeMessage(data, consultationId, userId);
+      const message = normalizeMessage(data, consultationId, userId);
       if (!message) return;
+      const isOwnMessage = String(message.senderId) === String(userId);
+      const namedMessage = {
+        ...message,
+        // The server echo confirms that the WebSocket delivered the message.
+        status:
+          isOwnMessage && (message.status === "sent" || message.status === "sending")
+            ? ("delivered" as const)
+            : message.status,
+        senderName:
+          isOwnMessage
+            ? userName
+            : message.participantType === "psychic"
+              ? psychicName || message.senderName
+              : customerName || message.senderName,
+        isOwn: isOwnMessage,
+      };
 
       setOptimisticMessages((current) => {
         const next = new Map(current);
-        const pendingId = findPendingMatch(next, message);
+        const pendingId = findPendingMatch(next, namedMessage);
         if (pendingId) {
           const pending = next.get(pendingId);
           next.delete(pendingId);
@@ -244,9 +273,9 @@ export function useMessages({
         }
         return next;
       });
-      setRemoteMessages((current) => new Map(current).set(message.id, message));
+      setRemoteMessages((current) => new Map(current).set(namedMessage.id, namedMessage));
     },
-    [clearAckTimer, consultationId, userId]
+    [clearAckTimer, consultationId, customerName, psychicName, userId, userName]
   );
 
   const handleReadReceipt = useCallback(

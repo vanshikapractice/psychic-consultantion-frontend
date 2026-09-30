@@ -25,6 +25,7 @@ export function BookingDetail() {
   const [fetching, setFetching] = useState(!bookingFromStore);
   const [starting, setStarting] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [hasExistingConsultation, setHasExistingConsultation] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,12 +44,24 @@ export function BookingDetail() {
       .finally(() => setFetching(false));
   }, [bookingFromStore, dispatch, id]);
 
+  useEffect(() => {
+    if (!booking?.id || booking.status === "pending" || booking.status === "canceled") {
+      setHasExistingConsultation(false);
+      return;
+    }
+    consultationsApi
+      .getByBooking(booking.id)
+      .then((consultation) => setHasExistingConsultation(Boolean(consultation)))
+      .catch((err) => setActionError((err as Error).message));
+  }, [booking?.id, booking?.status]);
+
   const handleStartConsultation = async () => {
     if (!booking) return;
     setStarting(true);
     setActionError(null);
     try {
       const { consultation } = await consultationsApi.startOrResume(booking.id);
+      setHasExistingConsultation(true);
       navigate(`/consultation/${consultation.id}`);
     } catch (err) {
       setActionError((err as Error).message);
@@ -169,7 +182,15 @@ export function BookingDetail() {
                 disabled={starting}
                 onClick={handleStartConsultation}
               >
-                {starting ? "Starting…" : isPsychic ? "Join live session" : "Start consultation"}
+                {starting
+                  ? hasExistingConsultation
+                    ? "Opening…"
+                    : "Starting…"
+                  : hasExistingConsultation
+                    ? "Continue consultation"
+                    : isPsychic
+                      ? "Join live session"
+                      : "Start consultation"}
               </Button>
             )}
           </div>

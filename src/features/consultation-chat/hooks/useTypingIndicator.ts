@@ -33,6 +33,7 @@ export function useTypingIndicator({
         window.clearTimeout(broadcastTimerRef.current);
         broadcastTimerRef.current = null;
       }
+      sendTypingRef.current(false);
     },
     []
   );
@@ -47,7 +48,7 @@ export function useTypingIndicator({
 
   const handleTypingEvent = useCallback(
     (data: TypingServerEventData) => {
-      const userId = data.userId;
+      const userId = String(data.userId);
       if (!data.isTyping) {
         removeUser(userId);
         return;
@@ -64,6 +65,7 @@ export function useTypingIndicator({
       const timer = window.setTimeout(() => removeUser(userId), TYPING_EXPIRY_MS);
       timeoutsRef.current.set(userId, timer);
       setTypingUsers([...usersRef.current.values()]);
+      console.debug("[chat] typing indicator users", [...usersRef.current.values()]);
     },
     [removeUser]
   );

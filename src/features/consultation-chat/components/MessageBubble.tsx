@@ -9,7 +9,7 @@ import {
   Clock,
   Loader2,
 } from "lucide-react";
-import { formatDateTime } from "../../../utils/dateFormat";
+import { formatDateTime, formatTime } from "../../../utils/dateFormat";
 import type { Message, MessageStatus } from "../types";
 
 export interface MessageBubbleProps {
@@ -25,7 +25,9 @@ const COLLAPSE_LENGTH = 240;
 export const MessageBubble = forwardRef<HTMLDivElement, MessageBubbleProps>(
   ({ message, isOwn, showAvatar = true, status, onRetry }, ref) => {
     const [expanded, setExpanded] = useState(false);
-    const collapsed = !expanded && message.content.length > COLLAPSE_LENGTH;
+    const senderName = message.senderName || "Consultation participant";
+    const content = message.content || "";
+    const collapsed = !expanded && content.length > COLLAPSE_LENGTH;
     const messageStatus = status ?? message.status;
 
     const handleRetry = () => {
@@ -66,7 +68,7 @@ export const MessageBubble = forwardRef<HTMLDivElement, MessageBubbleProps>(
           isOwn ? "ml-auto bg-primary-500 text-white" : "mr-auto bg-neutral-200 text-neutral-900 dark:bg-neutral-700 dark:text-white",
           message.type === "system" && "opacity-80"
         )}
-        aria-label={`Message from ${message.senderName}`}
+        aria-label={`Message from ${senderName}`}
         data-testid="message-bubble"
       >
         {!isOwn && showAvatar && (
@@ -74,22 +76,19 @@ export const MessageBubble = forwardRef<HTMLDivElement, MessageBubbleProps>(
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-800 dark:bg-primary-900 dark:text-primary-100"
             aria-hidden="true"
           >
-            {message.senderName.charAt(0).toUpperCase()}
+            {senderName.charAt(0).toUpperCase()}
           </div>
         )}
 
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex items-center justify-end gap-2 text-[11px] opacity-80">
-            {!isOwn && <span className="truncate font-medium">{message.senderName}</span>}
+            {!isOwn && <span className="truncate font-medium">{senderName}</span>}
             <time
               dateTime={message.createdAt}
               title={formatDateTime(message.createdAt)}
               className="shrink-0"
             >
-              {new Date(message.createdAt).toLocaleTimeString(undefined, {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
+              {formatTime(message.createdAt)}
             </time>
           </div>
 
@@ -99,7 +98,7 @@ export const MessageBubble = forwardRef<HTMLDivElement, MessageBubbleProps>(
               collapsed && "line-clamp-4"
             )}
           >
-            {message.content}
+            {content}
           </p>
 
           {collapsed && (

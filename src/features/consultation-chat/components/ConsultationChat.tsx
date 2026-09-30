@@ -60,6 +60,8 @@ export const ConsultationChat = forwardRef<ConsultationChatHandle, ConsultationC
     const chat = useConsultationChat({
       consultationId,
       user,
+      psychicName,
+      customerName,
     });
 
     const handleReconnect = useCallback(() => chat.reconnect(), [chat.reconnect]);

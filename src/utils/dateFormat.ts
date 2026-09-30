@@ -1,5 +1,13 @@
+function parseDate(value: string): Date | null {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
+  const date = parseDate(iso);
+  if (!date) return "Date unavailable";
+
+  return date.toLocaleString(undefined, {
     weekday: "short",
     year: "numeric",
     month: "short",
@@ -10,11 +18,24 @@ export function formatDateTime(iso: string): string {
 }
 
 export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+  const date = parseDate(iso);
+  if (!date) return "Date unavailable";
+
+  return date.toLocaleDateString(undefined, {
     weekday: "short",
     year: "numeric",
     month: "short",
     day: "numeric",
+  });
+}
+
+export function formatTime(iso: string): string {
+  const date = parseDate(iso);
+  if (!date) return "Time unavailable";
+
+  return date.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 

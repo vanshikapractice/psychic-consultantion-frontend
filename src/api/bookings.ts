@@ -88,8 +88,15 @@ export const bookingsApi = {
   get: (id: string) =>
     apiClient.get<unknown>(`/api/bookings/${id}`).then(unwrapBooking),
 
-  cancel: (id: string) =>
-    apiClient.delete<unknown>(`/api/bookings/${id}`).then(unwrapBooking),
+  cancel: async (id: string): Promise<Booking | null> => {
+    const response = await apiClient.delete<unknown>(`/api/bookings/${id}`);
+    if (response === undefined) return null;
+    try {
+      return unwrapBooking(response);
+    } catch {
+      return null;
+    }
+  },
 
   updateStatus: (id: string, status: BookingStatus) =>
     apiClient

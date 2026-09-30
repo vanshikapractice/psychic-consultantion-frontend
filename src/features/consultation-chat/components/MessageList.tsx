@@ -1,8 +1,3 @@
-import {
-  FixedSizeList,
-  type FixedSizeList as FixedSizeListType,
-  type ListOnScrollProps,
-} from "react-window";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { clsx } from "../../../utils/clsx";
@@ -29,11 +24,12 @@ interface MessageRow {
   message?: Message;
 }
 
-const ITEM_HEIGHT = 92;
-const LIST_HEIGHT = 480;
-
 function dateKey(message: Message): string {
-  return new Date(message.createdAt).toDateString();
+  const date = new Date(message.createdAt);
+  if (Number.isNaN(date.getTime())) return "";
+  return [date.getFullYear(), date.getMonth() + 1, date.getDate()]
+    .map((part, index) => (index === 0 ? String(part) : String(part).padStart(2, "0")))
+    .join("-");
 }
 
 function buildRows(messages: Message[]): MessageRow[] {
@@ -60,69 +56,50 @@ export function MessageList({
   currentUserId,
 }: MessageListProps) {
   const rows = useMemo(() => buildRows(messages), [messages]);
-  const listRef = useRef<FixedSizeListType<MessageRow[]>>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const atBottomRef = useRef(true);
-  const previousLengthRef = useRef(rows.length);
-  const previousFirstKeyRef = useRef<string | null>(null);
   const lastScrollCheckRef = useRef(0);
   const [scrollTop, setScrollTop] = useState(0);
+  const setScrollElement = useCallback(
+    (element: HTMLDivElement | null) => {
+      outerRef.current = element;
+      scrollRef.current = element;
+    },
+    [scrollRef]
+  );
 
   useEffect(() => {
-    const previousFirst = previousFirstKeyRef.current;
-    const nextFirst = rows[0]?.key ?? null;
-    if (previousFirst && nextFirst && previousFirst !== nextFirst && rows.length > 0) {
-      const index = rows.findIndex((row) => row.key === nextFirst);
-      const frame = typeof requestAnimationFrame === "undefined" ? (callback: FrameRequestCallback) => window.setTimeout(() => callback(Date.now()), 0) : requestAnimationFrame;
-      frame(() => listRef.current?.scrollToItem(index, "start"));
-    }
-    previousFirstKeyRef.current = nextFirst;
-  }, [rows]);
-
-  useEffect(() => {
-    if (rows.length > previousLengthRef.current && atBottomRef.current && rows.length > 0) {
-      listRef.current?.scrollToItem(rows.length - 1, "end");
-    }
-    previousLengthRef.current = rows.length;
+    const element = outerRef.current;
+    if (element && atBottomRef.current) element.scrollTop = element.scrollHeight;
   }, [rows.length]);
 
   const handleScroll = useCallback(
-    ({ scrollOffset: nextScrollTop }: ListOnScrollProps) => {
+    (event: React.UIEvent<HTMLDivElement>) => {
+      const element = event.currentTarget;
+      const nextScrollTop = element.scrollTop;
       const now = Date.now();
       if (now - lastScrollCheckRef.current < 100) return;
       lastScrollCheckRef.current = now;
       setScrollTop(nextScrollTop);
-      const element = outerRef.current;
-      if (element) {
-        atBottomRef.current =
-          element.scrollHeight - nextScrollTop - element.clientHeight < 100;
-      }
+      atBottomRef.current = element.scrollHeight - nextScrollTop - element.clientHeight < 100;
       if (nextScrollTop <= 2 && hasNextPage && !isLoadingMore) loadMore();
     },
     [hasNextPage, isLoadingMore, loadMore]
   );
 
-  const handleItemsRendered = useCallback(
-    ({ visibleStartIndex }: { visibleStartIndex: number }) => {
-      if (visibleStartIndex <= 1 && hasNextPage && !isLoadingMore) loadMore();
-    },
-    [hasNextPage, isLoadingMore, loadMore]
-  );
-
   const renderRow = useCallback(
-    ({ index, style }: { index: number; style: React.CSSProperties }) => {
-      const row = rows[index];
+    (row: MessageRow) => {
       if (!row) return null;
       if (row.kind === "date-separator" && row.date) {
         return (
           <div
-            style={style}
-            className="flex h-9 items-center justify-center border-b border-neutral-200 dark:border-neutral-700"
+            key={row.key}
+            className="flex h-9 shrink-0 items-center justify-center border-b border-neutral-200 dark:border-neutral-700"
             role="separator"
-            aria-label={formatDate(`${row.date}T00:00:00`)}
+            aria-label={formatDate(row.date)}
           >
             <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-              {formatDate(`${row.date}T00:00:00`)}
+              {formatDate(row.date)}
             </span>
           </div>
         );
@@ -132,7 +109,7 @@ export function MessageList({
           row.message.isOwn ??
           (currentUserId !== undefined && String(row.message.senderId) === String(currentUserId));
         return (
-          <div style={style} className="flex h-full items-center px-2 py-1">
+          <div key={row.key} className="flex min-w-0 px-2 py-1">
             {row.message.type === "system" ? (
               <SystemMessage type="consultation_started" text={row.message.content} />
             ) : (
@@ -152,9 +129,9 @@ export function MessageList({
 
   return (
     <div
-      ref={scrollRef}
+      ref={setScrollElement}
       className={clsx(
-        "relative min-h-0 overflow-hidden rounded-lg",
+        "relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-lg",
         isLoadingMore && "pointer-events-none opacity-80"
       )}
       data-testid="message-list"
@@ -162,23 +139,11 @@ export function MessageList({
       aria-live="polite"
       aria-atomic="false"
       aria-label="Consultation messages"
+      onScroll={handleScroll}
     >
-      <FixedSizeList<MessageRow[]>
-        ref={listRef}
-        outerRef={outerRef}
-        height={LIST_HEIGHT}
-        width="100%"
-        itemCount={rows.length}
-        itemSize={ITEM_HEIGHT}
-        itemData={rows}
-        itemKey={(index, data) => data[index]?.key ?? String(index)}
-        onScroll={handleScroll}
-        onItemsRendered={handleItemsRendered}
-        overscanCount={5}
-        style={{ height: "100%", width: "100%" }}
-      >
-        {renderRow}
-      </FixedSizeList>
+      <div className="flex min-h-full flex-col justify-end">
+        {rows.map(renderRow)}
+      </div>
 
       {rows.length === 0 && !isLoadingMore && (
         <div className="flex h-full items-center justify-center text-sm text-neutral-500 dark:text-neutral-400">

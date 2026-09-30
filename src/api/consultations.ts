@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import type { ApiError } from "./types";
 import type { Consultation, ConsultationStatus } from "../types";
 
 export interface StartConsultationResult {
@@ -90,6 +91,16 @@ async function parseConsultationList(payload: unknown): Promise<Consultation[]> 
   return data.map(normalizeConsultation);
 }
 
+function errorCode(error: unknown): string | undefined {
+  const apiError = error as ApiError;
+  if (apiError.errorCode) return apiError.errorCode;
+  if (apiError.details && typeof apiError.details === "object") {
+    const details = apiError.details as { code?: unknown };
+    return details.code === undefined ? undefined : String(details.code);
+  }
+  return undefined;
+}
+
 export const consultationsApi = {
   start: async (bookingId: string): Promise<StartConsultationResult> => {
     const token = apiClient.token;
@@ -109,8 +120,12 @@ export const consultationsApi = {
         `/api/consultations/by-booking/${bookingId}`
       );
       return parseConsultationResponse(response);
-    } catch {
-      return null;
+    } catch (err) {
+      const apiError = err as ApiError;
+      if (apiError.status === 404 || errorCode(err) === "CONSULTATION_NOT_FOUND") {
+        return null;
+      }
+      throw err;
     }
   },
 
@@ -118,11 +133,8 @@ export const consultationsApi = {
     try {
       return await consultationsApi.start(bookingId);
     } catch (err) {
-      const apiErr = err as Error & { status?: number; details?: { code?: string } };
-      const code =
-        apiErr.details && typeof apiErr.details === "object" && "code" in apiErr.details
-          ? String((apiErr.details as { code?: string }).code)
-          : undefined;
+      const apiErr = err as ApiError;
+      const code = errorCode(err);
       if (apiErr.status === 409 || code === "CONSULTATION_EXISTS") {
         const existing = await consultationsApi.getByBooking(bookingId);
         if (existing && apiClient.token) {

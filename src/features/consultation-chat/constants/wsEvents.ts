@@ -28,11 +28,21 @@ function hasType(value: unknown, type: string): value is Record<string, unknown>
 }
 
 export function isMessageEvent(event: unknown): event is MessageServerEvent {
-  return hasType(event, WS_EVENT_TYPES.MESSAGE) && isRecord(event.data);
+  if (!hasType(event, WS_EVENT_TYPES.MESSAGE)) return false;
+  return isRecord(event.data) || isRecord(event.message) || isRecord(event.payload);
 }
 
 export function isTypingEvent(event: unknown): event is TypingServerEvent {
-  return hasType(event, WS_EVENT_TYPES.TYPING) && isRecord(event.data);
+  if (!isRecord(event)) return false;
+  const eventType = event.type ?? event.event ?? event.event_type;
+  if (eventType !== WS_EVENT_TYPES.TYPING) return false;
+  return (
+    isRecord(event.data) ||
+    isRecord(event.message) ||
+    isRecord(event.payload) ||
+    "userId" in event ||
+    "user_id" in event
+  );
 }
 
 export function isReadEvent(event: unknown): event is ReadServerEvent {

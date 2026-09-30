@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useLayoutEffect,
   useRef,
@@ -19,6 +20,7 @@ export interface MessageInputProps {
 
 const MAX_LINES = 5;
 const LINE_HEIGHT = 24;
+const TYPING_IDLE_MS = 1_500;
 
 export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
   (
@@ -35,9 +37,32 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
     const [value, setValue] = useState("");
     const [height, setHeight] = useState(LINE_HEIGHT);
     const [composing, setComposing] = useState(false);
+    const typingTimerRef = useRef<number | null>(null);
     const charCount = value.length;
     const isOverLimit = charCount > charLimit;
     const canSend = value.trim().length > 0 && !disabled && !isOverLimit;
+
+    const clearTypingTimer = useCallback(() => {
+      if (typingTimerRef.current !== null) {
+        window.clearTimeout(typingTimerRef.current);
+        typingTimerRef.current = null;
+      }
+    }, []);
+
+    const stopTyping = useCallback(() => {
+      clearTypingTimer();
+      onTyping(false);
+    }, [clearTypingTimer, onTyping]);
+
+    const scheduleTypingStop = useCallback(() => {
+      clearTypingTimer();
+      typingTimerRef.current = window.setTimeout(() => {
+        typingTimerRef.current = null;
+        onTyping(false);
+      }, TYPING_IDLE_MS);
+    }, [clearTypingTimer, onTyping]);
+
+    useEffect(() => () => clearTypingTimer(), [clearTypingTimer]);
 
     useImperativeHandle(ref, () => textareaRef.current as HTMLTextAreaElement, []);
 
@@ -53,17 +78,23 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       if (!trimmed || disabled || isOverLimit) return;
       onSend(trimmed);
       setValue("");
-      onTyping(false);
+      stopTyping();
       textareaRef.current?.focus();
-    }, [disabled, isOverLimit, onSend, onTyping, value]);
+    }, [disabled, isOverLimit, onSend, stopTyping, value]);
 
     const handleChange = useCallback(
       (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         if (composing) return;
-        setValue(event.currentTarget.value);
-        onTyping(event.currentTarget.value.length > 0);
+        const nextValue = event.currentTarget.value;
+        setValue(nextValue);
+        if (nextValue.length > 0) {
+          onTyping(true);
+          scheduleTypingStop();
+        } else {
+          stopTyping();
+        }
       },
-      [composing, onTyping]
+      [composing, onTyping, scheduleTypingStop, stopTyping]
     );
 
     const handleKeyDown = useCallback(
@@ -78,9 +109,9 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
     const handleClear = useCallback(() => {
       setValue("");
-      onTyping(false);
+      stopTyping();
       textareaRef.current?.focus();
-    }, [onTyping]);
+    }, [stopTyping]);
 
     return (
       <div
@@ -100,10 +131,16 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           onCompositionStart={() => setComposing(true)}
           onCompositionEnd={(event) => {
             setComposing(false);
-            setValue(event.currentTarget.value);
-            onTyping(event.currentTarget.value.length > 0);
+            const nextValue = event.currentTarget.value;
+            setValue(nextValue);
+            if (nextValue.length > 0) {
+              onTyping(true);
+              scheduleTypingStop();
+            } else {
+              stopTyping();
+            }
           }}
-          onBlur={() => onTyping(false)}
+          onBlur={scheduleTypingStop}
           placeholder={disabled ? "Connecting…" : placeholder}
           disabled={disabled}
           rows={1}
@@ -111,7 +148,11 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           aria-label="Message input"
           aria-describedby="message-char-count"
           title={disabled ? "Connecting…" : undefined}
-          style={{ height: `${height}px` }}
+          style={{
+            height: `${height}px`,
+            maxHeight: `${LINE_HEIGHT * MAX_LINES}px`,
+            overflowY: height >= LINE_HEIGHT * MAX_LINES ? "auto" : "hidden",
+          }}
         />
         <div className="mt-2 flex items-center justify-between gap-3">
           <span id="message-char-count" className="text-xs text-neutral-500 dark:text-neutral-400" aria-live="polite">

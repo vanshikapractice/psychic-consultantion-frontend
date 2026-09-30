@@ -30,6 +30,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const restored = initAuthState();
     if (restored.user && restored.token) {
       dispatch(setReduxAuth(restored));
+
+      let active = true;
+      void authApi
+        .getProfile()
+        .then((rawUser) => {
+          const profile = normalizeUser(rawUser);
+          if (!active || !profile) return;
+          setUser(profile);
+          dispatch(updateUser(profile));
+        })
+        .catch(() => undefined);
+
+      return () => {
+        active = false;
+      };
     }
   }, [dispatch]);
 

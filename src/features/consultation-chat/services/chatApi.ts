@@ -87,7 +87,12 @@ export function normalizeMessage(
       value.name
   );
   const type = messageType(value.message_type ?? value.messageType ?? value.type);
-  const createdAt = stringValue(value.created_at ?? value.createdAt ?? value.timestamp);
+  const rawCreatedAt = stringValue(value.created_at ?? value.createdAt ?? value.timestamp);
+  const parsedCreatedAt = rawCreatedAt ? new Date(rawCreatedAt) : null;
+  const createdAt =
+    parsedCreatedAt && !Number.isNaN(parsedCreatedAt.getTime())
+      ? rawCreatedAt
+      : new Date().toISOString();
   const ownSender = currentUserId !== undefined && senderId === String(currentUserId);
 
   return {
@@ -105,7 +110,7 @@ export function normalizeMessage(
     content: stringValue(value.content ?? value.body ?? value.text),
     type,
     status: messageStatus(value.status ?? value.delivery_status ?? value.deliveryStatus),
-    createdAt: createdAt || new Date().toISOString(),
+    createdAt,
     deliveredAt: stringValue(value.delivered_at ?? value.deliveredAt) || undefined,
     readAt: stringValue(value.read_at ?? value.readAt) || undefined,
     tempId: stringValue(value.temp_id ?? value.tempId) || undefined,

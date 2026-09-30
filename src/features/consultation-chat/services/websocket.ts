@@ -57,11 +57,82 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function parseServerEvent(value: unknown): ServerEvent | null {
-  if (!isRecord(value) || typeof value.type !== "string") return null;
+function normalizeTypingEvent(value: Record<string, unknown>): TypingServerEvent | null {
+  let payload: unknown = value.data ?? value.message ?? value.payload ?? value;
+  if (typeof payload === "string") {
+    try {
+      payload = JSON.parse(payload) as unknown;
+    } catch {
+      return null;
+    }
+  }
+  if (!isRecord(payload)) return null;
 
-  if (isMessageEvent(value)) return value;
-  if (isTypingEvent(value)) return value;
+  const nestedUser = isRecord(payload.user) ? payload.user : undefined;
+  const userId =
+    payload.userId ??
+    payload.user_id ??
+    payload.senderId ??
+    payload.sender_id ??
+    nestedUser?.id;
+
+  const rawTyping = payload.isTyping ?? payload.is_typing ?? payload.typing;
+  const isTyping =
+    typeof rawTyping === "string"
+      ? rawTyping.toLowerCase() === "true"
+      : Boolean(rawTyping);
+
+  return {
+    type: "typing",
+    data: {
+      userId: (userId ?? "remote-participant") as TypingServerEvent["data"]["userId"],
+      userName: String(
+        payload.userName ??
+          payload.user_name ??
+          payload.senderName ??
+          payload.sender_name ??
+          nestedUser?.name ??
+          payload.name ??
+          "Participant"
+      ),
+      participantType:
+        payload.participantType === "psychic" ||
+        payload.participant_type === "psychic" ||
+        payload.role === "psychic"
+          ? "psychic"
+          : "customer",
+      isTyping,
+    },
+  };
+}
+
+function parseServerEvent(value: unknown): ServerEvent | null {
+  if (!isRecord(value)) return null;
+  const eventType = value.type ?? value.event ?? value.event_type;
+
+  if (eventType === "typing") return normalizeTypingEvent(value);
+  if (typeof eventType !== "string") return null;
+
+  if (value.type === "message") {
+    let payload = value.data ?? value.message ?? value.payload;
+    if (typeof payload === "string") {
+      try {
+        payload = JSON.parse(payload) as unknown;
+      } catch {
+        return null;
+      }
+    }
+    return isRecord(payload)
+      ? ({ ...value, data: payload } as unknown as MessageServerEvent)
+      : null;
+  }
+
+  if (isMessageEvent(value)) {
+    if (isRecord(value.data)) return value;
+    const payload = value.message ?? value.payload;
+    return { ...value, data: payload } as MessageServerEvent;
+  }
+  if (isTypingEvent(value)) return normalizeTypingEvent(value);
   if (isReadEvent(value)) return value;
   if (isConnectedEvent(value)) return value;
   if (isPongEvent(value)) return value;
@@ -103,6 +174,7 @@ export class WebSocketClient {
   private heartbeatTimer: number | null = null;
   private pongTimer: number | null = null;
   private reconnectAttempt = 0;
+  private reconnectRequested = false;
   private manualClose = false;
   private paused = false;
   private online = true;
@@ -125,13 +197,7 @@ export class WebSocketClient {
 
     if (typeof window !== "undefined") {
       this.visibilityHandler = () => {
-        if (document.hidden) {
-          this.paused = true;
-          this.socket?.close(1000, "Page hidden");
-        } else {
-          this.paused = false;
-          if (this.online) this.connect();
-        }
+        if (!document.hidden && this.online) this.connect();
       };
       this.onlineHandler = () => {
         this.online = true;
@@ -210,14 +276,23 @@ export class WebSocketClient {
         this.setStatus("error");
       };
 
-      socket.onclose = () => {
+      socket.onclose = (event) => {
         if (this.socket !== socket) return;
         this.socket = null;
         this.clearHeartbeat();
+        if (this.reconnectRequested) {
+          this.reconnectRequested = false;
+          this.connect();
+          return;
+        }
         if (this.manualClose || this.paused || !this.online) {
           this.setStatus("disconnected");
           return;
         }
+        this.emit("error", {
+          type: "error",
+          message: `WebSocket closed (${event.code}${event.reason ? `: ${event.reason}` : ""}).`,
+        });
         this.scheduleReconnect();
       };
     } catch {
@@ -239,12 +314,17 @@ export class WebSocketClient {
 
   disconnect(reason = "Component unmounted"): void {
     this.manualClose = true;
+    this.reconnectRequested = false;
     this.clearReconnectTimer();
     this.clearHeartbeat();
     this.sendQueue.length = 0;
-    this.socket?.close(1000, reason);
-    this.socket = null;
-    this.setStatus("disconnected");
+    const socket = this.socket;
+    if (!socket || socket.readyState === WebSocket.CLOSED) {
+      this.socket = null;
+      this.setStatus("disconnected");
+      return;
+    }
+    socket.close(1000, reason);
   }
 
   destroy(): void {
@@ -260,8 +340,14 @@ export class WebSocketClient {
     this.paused = false;
     this.online = true;
     this.clearReconnectTimer();
-    this.socket?.close(1000, "Manual reconnect");
-    this.connect();
+    const socket = this.socket;
+    if (!socket || socket.readyState === WebSocket.CLOSED) {
+      this.socket = null;
+      this.connect();
+      return;
+    }
+    this.reconnectRequested = true;
+    socket.close(1000, "Manual reconnect");
   }
 
   private handleMessage(raw: unknown): void {
@@ -283,7 +369,15 @@ export class WebSocketClient {
 
   private write(event: ClientEvent): void {
     if (!this.isConnected) return;
-    this.socket?.send(JSON.stringify(event));
+    const payload =
+      event.type === "message"
+        ? {
+            type: "message" as const,
+            content: event.content,
+            messageType: event.messageType ?? "text",
+          }
+        : event;    
+    this.socket?.send(JSON.stringify(payload));
   }
 
   private flushQueue(): void {

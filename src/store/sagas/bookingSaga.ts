@@ -47,8 +47,13 @@ function* updateBookingStatusSaga(action: BookingAction & { payload: { id: strin
 
 function* cancelBookingSaga(action: BookingAction & { payload: string }): Generator<any, void, any> {
   try {
-    yield call(() => bookingsApi.cancel(action.payload));
-    yield put(cancelBooking(action.payload));
+    yield put(setLoading(true));
+    const booking: any = yield call(() => bookingsApi.cancel(action.payload));
+    yield put(
+      booking
+        ? updateBookingStatus({ id: action.payload, status: booking.status })
+        : cancelBooking(action.payload)
+    );
     yield put(setError(null));
   } catch (err) {
     yield put(setError((err as Error).message));

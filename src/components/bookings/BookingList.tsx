@@ -11,7 +11,6 @@ import {
   selectBookingError,
   selectUpcomingBookings,
   selectPastBookings,
-  cancelBooking,
 } from "../../store";
 import { selectAuthUser } from "../../store/selectors/authSelectors";
 import type { Booking, BookingStatus } from "../../types";
@@ -46,7 +45,7 @@ export function BookingList() {
   }, [dispatch, isPsychic]);
 
   const handleCancel = (id: string) => {
-    dispatch(cancelBooking(id));
+    dispatch({ type: "bookings/cancel", payload: id });
   };
 
   if (loading) {

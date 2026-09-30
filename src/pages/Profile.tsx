@@ -5,6 +5,7 @@ import { selectAuthUser, selectAuthLoading, selectAuthError } from "../store";
 import { selectPsychicLoading, selectPsychicError } from "../store";
 import { SPECIALTIES } from "../types";
 import type { Psychic } from "../types";
+import { formatDate } from "../utils/dateFormat";
 
 export function Profile() {
   const dispatch = useAppDispatch();
@@ -131,7 +132,7 @@ export function Profile() {
             </div>
             <div className="profile__field">
               <span className="profile__label">Member Since</span>
-              <span>{new Date(user.createdAt).toLocaleDateString()}</span>
+              <span>{formatDate(user.createdAt)}</span>
             </div>
 
             {isPsychic && (

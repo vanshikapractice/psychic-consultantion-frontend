@@ -1,4 +1,4 @@
-import { StrictMode, useEffect } from "react";
+import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import "./styles/ui.css";
@@ -23,8 +23,8 @@ function ThemeSync() {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+  <>
     <ThemeSync />
     <App />
-  </StrictMode>
+  </>
 );

@@ -47,10 +47,12 @@ class ApiClient {
     }
 
     if (!response.ok) {
-      const errBody = body as { message?: string; error?: string } | undefined;
+      const errBody = body as { message?: string; error?: string; code?: string } | undefined;
       const message = errBody?.message ?? errBody?.error ?? response.statusText;
       const errorCode =
-        (errBody?.error as ErrorCode) ?? this.mapStatusToCode(response.status);
+        (errBody?.code as ErrorCode) ??
+        (errBody?.error as ErrorCode) ??
+        this.mapStatusToCode(response.status);
       const apiError: ApiError = new Error(message) as ApiError;
       apiError.status = response.status;
       apiError.errorCode = errorCode;

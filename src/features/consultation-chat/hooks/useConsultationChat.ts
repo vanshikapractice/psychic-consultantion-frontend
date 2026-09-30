@@ -9,6 +9,8 @@ import type { ChatUser } from "../types";
 export interface UseConsultationChatParams {
   consultationId: string | number;
   user: ChatUser;
+  psychicName?: string;
+  customerName?: string;
 }
 
 export interface UseConsultationChatReturn {
@@ -39,6 +41,8 @@ export interface UseConsultationChatReturn {
 export function useConsultationChat({
   consultationId,
   user,
+  psychicName,
+  customerName,
 }: UseConsultationChatParams): UseConsultationChatReturn {
   const token =
     apiClient.token ??
@@ -54,7 +58,10 @@ export function useConsultationChat({
     consultationId,
     token,
     onMessage: (event) => messagesRef.current?.handleServerMessage(event),
-    onTyping: (event) => typingRef.current?.handleTypingEvent(event.data),
+    onTyping: (event) => {
+      console.debug("[chat] received typing event", event.data);
+      typingRef.current?.handleTypingEvent(event.data);
+    },
     onRead: (event) => {
       messagesRef.current?.handleReadReceipt(event);
       unreadRef.current?.handleRead(event);
@@ -68,6 +75,8 @@ export function useConsultationChat({
     userId: String(user.id),
     userName: user.name,
     participantType: user.role === "psychic" ? "psychic" : "customer",
+    psychicName,
+    customerName,
     sendClientEvent: ws.sendMessage,
   });
 
@@ -89,6 +98,11 @@ export function useConsultationChat({
   useEffect(() => {
     unread.reset();
   }, [consultationId, user.id, unread.reset]);
+
+  useEffect(() => {
+    if (ws.connectionStatus === "connected") return;
+    typing.clearTyping();
+  }, [typing.clearTyping, ws.connectionStatus]);
 
   const markRead = useCallback(() => {
     messages.markRead();

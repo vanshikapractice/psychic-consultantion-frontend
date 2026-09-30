@@ -83,7 +83,7 @@ export function useWebSocket({
       }),
     ];
 
-    if (token) client.connect();
+    if (token) client.reconnect();
     else setConnectionStatus("disconnected");
 
     return () => {
